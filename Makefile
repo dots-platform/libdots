@@ -9,7 +9,7 @@ CFLAGS = -std=c11 -pedantic -pedantic-errors -fPIC -O3 -Wall -Wextra -Werror
 LDFLAGS = -shared
 LDLIBS =
 
-all: FORCE $(TARGET_SO) $(TARGET_AR)
+all: FORCE $(TARGET_SO) $(TARGET_AR) example
 
 $(TARGET_SO): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(TARGET_SO)
@@ -21,5 +21,8 @@ clean: FORCE
 	rm -rf $(TARGET_SO) $(TARGET_AR) $(OBJS) $(DEPS)
 
 FORCE:
+
+example: FORCE
+	$(MAKE) -C example
 
 -include $(DEPS)
