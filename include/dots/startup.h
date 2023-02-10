@@ -1,11 +1,11 @@
-#ifndef DOTS_STARTUP_H
-#define DOTS_STARTUP_H
-
 /**
  * \file startup.h
  *
  * \brief   Program startup handling to initialize local DoTS context.
  */
+
+#ifndef DOTS_STARTUP_H
+#define DOTS_STARTUP_H
 
 /**
  * \brief   Initialize DoTS context from the program's startup environment.

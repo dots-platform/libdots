@@ -4,7 +4,7 @@ OBJS =
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude
-CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra -Werror
+CFLAGS = -std=c11 -pedantic -pedantic-errors -fPIC -O3 -Wall -Wextra -Werror
 LDFLAGS = -shared
 LDLIBS =
 

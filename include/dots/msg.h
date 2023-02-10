@@ -1,12 +1,12 @@
-#ifndef DOTS_MSG_H
-#define DOTS_MSG_H
-
 /**
  * \file msg.h
  *
  * \brief   Message sending and receiving facilities for DoTS applications to
  *          communicate between nodes.
  */
+
+#ifndef DOTS_MSG_H
+#define DOTS_MSG_H
 
 #include <stddef.h>
 
