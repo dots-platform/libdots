@@ -1,6 +1,7 @@
 TARGET_SO = libdots.so
 TARGET_AR = libdots.a
-OBJS =
+OBJS = \
+	dots/env.o
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude

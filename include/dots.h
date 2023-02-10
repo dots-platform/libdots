@@ -1,7 +1,7 @@
 #ifndef DOTS_H
 #define DOTS_H
 
+#include "dots/env.h"
 #include "dots/msg.h"
-#include "dots/startup.h"
 
 #endif
