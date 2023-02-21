@@ -9,6 +9,10 @@ LDLIBS = -ldots
 all: FORCE $(TARGET)
 
 $(TARGET): $(TARGET).c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(TARGET).c $(LDLIBS) -o $(TARGET)
+
+clean: FORCE
+	rm -rf $(TARGET) $(DEP)
 
 FORCE:
 

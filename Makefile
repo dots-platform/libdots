@@ -19,6 +19,7 @@ $(TARGET_AR): $(OBJS)
 
 clean: FORCE
 	rm -rf $(TARGET_SO) $(TARGET_AR) $(OBJS) $(DEPS)
+	$(MAKE) -C example clean
 
 FORCE:
 
