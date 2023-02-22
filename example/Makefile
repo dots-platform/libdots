@@ -2,7 +2,7 @@ TARGET = example
 DEP = $(TARGET:=.d)
 
 CPPFLAGS = -MMD -I../include
-CFLAGS = -std=c11 -pedantic -pedantic-errors -Wall -Wextra -Werror
+CFLAGS = -std=c11 -pedantic -pedantic-errors -O0 -g -Wall -Wextra -Werror
 LDFLAGS = -L..
 LDLIBS = -ldots
 
