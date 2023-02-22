@@ -25,7 +25,7 @@ clean: FORCE
 
 FORCE:
 
-example: FORCE
+example: $(TARGET_SO) FORCE
 	$(MAKE) -C example
 
 -include $(DEPS)
