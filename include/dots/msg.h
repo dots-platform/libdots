@@ -21,7 +21,7 @@
  *
  * \return          \c 0 on success.
  */
-int dots_msg_send(const void *buf, size_t len, int recipient);
+int dots_msg_send(const void *buf, size_t len, size_t recipient);
 
 /**
  * \brief           Receive a message from another DoTS application node.
@@ -37,6 +37,6 @@ int dots_msg_send(const void *buf, size_t len, int recipient);
  *
  * \return          \c 0 on success.
  */
-int dots_msg_recv(void *buf, size_t len, int sender, size_t *recv_len);
+int dots_msg_recv(void *buf, size_t len, size_t sender, size_t *recv_len);
 
 #endif

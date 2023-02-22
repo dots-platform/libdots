@@ -4,11 +4,11 @@
 #include "dots/env.h"
 #include "dots/err.h"
 
-int dots_msg_send(const void *buf_, size_t len, int recipient) {
+int dots_msg_send(const void *buf_, size_t len, size_t recipient) {
     const unsigned char *buf = buf_;
     int ret;
 
-    if (recipient < 0 || (size_t) recipient >= dots_world_size) {
+    if (recipient >= dots_world_size || recipient == dots_world_rank) {
         ret = DOTS_ERR_INVALID;
         goto exit;
     }
@@ -36,11 +36,11 @@ exit:
     return ret;
 }
 
-int dots_msg_recv(void *buf_, size_t len, int sender, size_t *recv_len) {
+int dots_msg_recv(void *buf_, size_t len, size_t sender, size_t *recv_len) {
     unsigned char *buf = buf_;
     int ret;
 
-    if (sender < 0 || (size_t) sender >= dots_world_size) {
+    if (sender >= dots_world_size || sender == dots_world_rank) {
         ret = DOTS_ERR_INVALID;
         goto exit;
     }

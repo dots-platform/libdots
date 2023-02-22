@@ -18,23 +18,15 @@ int main(void) {
             bytes = htonl(sender);
             for (size_t recipient = 0; recipient < dots_world_size;
                     recipient++) {
+                if (recipient == dots_world_rank) {
+                    continue;
+                }
+
                 if (dots_msg_send(&bytes, sizeof(bytes), recipient)) {
                     fprintf(stderr, "Failed sending to %zu\n", recipient);
                     abort();
                 }
                 printf("Sent %zu to %zu\n", sender, recipient);
-                if (dots_world_rank == recipient) {
-                    if (dots_msg_recv(&bytes, sizeof(bytes), sender, NULL)) {
-                        fprintf(stderr, "Failed receiving from self\n");
-                        abort();
-                    }
-                    if (ntohl(bytes) != sender) {
-                        fprintf(stderr,
-                                "Received %" PRIu32 " instead of %zu from self\n",
-                                ntohl(bytes), sender);
-                    }
-                    printf("Received %" PRIu32 " from self\n", ntohl(bytes));
-                }
             }
         } else {
             if (dots_msg_recv(&bytes, sizeof(bytes), sender, NULL)) {
