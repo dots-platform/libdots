@@ -1,0 +1,16 @@
+---
+use_tls: false
+
+nodes:
+  node1:
+    addr: "127.0.0.1:50051"
+    ports: [51000, 51001]
+  node2:
+    addr: "127.0.0.1:50052"
+    ports: [52000]
+
+apps:
+  libdots_example:
+    path: ../libdots/example/example_wrapper.sh
+
+file_storage_dir: "../libdots/example/files"
