@@ -43,7 +43,7 @@ static size_t dots_getline(char **restrict lineptr, size_t *restrict n,
         }
 
         char *null_byte = memchr(*lineptr + line_next, '\0', *n - line_next);
-        if (null_byte == *lineptr || *(null_byte - 1) == '\n') {
+        if (null_byte < *lineptr + *n - 1 || *(null_byte - 1) == '\n') {
             line_length = null_byte - *lineptr;
             newline_reached = true;
         } else {
