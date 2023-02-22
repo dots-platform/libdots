@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 #include "dots/err.h"
 
 #define GETLINE_INITIAL_SIZE 4096
@@ -18,6 +21,7 @@ size_t dots_in_fds_len;
 int *dots_out_fds;
 size_t dots_out_fds_len;
 char *dots_func_name;
+int dots_control_socket;
 
 /* Returns a malloc'd buffer containing the next line of input from f, including
  * the newline. Behaves like POSIX getline and returns SIZE_MAX upon error. */
@@ -176,8 +180,32 @@ int dots_env_init(void) {
     line = new_line;
     dots_func_name = line;
 
+    /* Open control socket. */
+    // TODO Some more sane path handling here would be nice, or the DoTS server
+    // could just use a socketpair rather than relying on a socket in /tmp.
+    dots_control_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (dots_control_socket < 0) {
+        ret = DOTS_ERR_LIBC;
+        goto exit_free_comm_sockets;
+    }
+    struct sockaddr_un addr = {
+        .sun_family = AF_UNIX,
+    };
+    if (snprintf(addr.sun_path, sizeof(addr.sun_path), "/tmp/socket-%d",
+                getpid())
+            >= (int) sizeof(addr.sun_path)) {
+        ret = DOTS_ERR_INTERNAL;
+        goto exit_close_control_socket;
+    }
+    if (connect(dots_control_socket, (struct sockaddr *) &addr, sizeof(addr))) {
+        ret = DOTS_ERR_LIBC;
+        goto exit_close_control_socket;
+    }
+
     return 0;
 
+exit_close_control_socket:
+    close(dots_control_socket);
 exit_free_comm_sockets:
     free(dots_comm_sockets);
 exit_free_out_fds:

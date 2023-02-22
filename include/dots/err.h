@@ -10,5 +10,6 @@
 #define DOTS_ERR_LIBC (-1)
 #define DOTS_ERR_INTERFACE (-2)
 #define DOTS_ERR_INVALID (-3)
+#define DOTS_ERR_INTERNAL (-4)
 
 #endif

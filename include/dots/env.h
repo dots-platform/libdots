@@ -51,6 +51,11 @@ extern size_t dots_out_fds_len;
 extern char *dots_func_name;
 
 /**
+ * \brief   The control socket to the DoTS server.
+ */
+extern int dots_control_socket;
+
+/**
  * \brief   Initialize DoTS environment from the program's startup environment.
  *
  * \note    This function must be called before any other function that changes
