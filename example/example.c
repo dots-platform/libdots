@@ -35,5 +35,16 @@ int main(void) {
         }
     }
 
+    /* Open a second socket. */
+    if (dots_world_size >= 2) {
+        if (dots_world_rank == 0) {
+            int socket = dots_open_socket(1);
+            assert(socket >= 0);
+        } else if (dots_world_rank == 1) {
+            int socket = dots_open_socket(0);
+            assert(socket >= 0);
+        }
+    }
+
     dots_env_finalize();
 }
