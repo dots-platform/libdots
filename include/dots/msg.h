@@ -9,6 +9,9 @@
 #define DOTS_MSG_H
 
 #include <stddef.h>
+#include "dots/defs.h"
+
+DOTS_EXTERNC_BEGIN
 
 /**
  * \brief           Send a message to another DoTS application node.
@@ -38,5 +41,7 @@ int dots_msg_send(const void *buf, size_t len, size_t recipient);
  * \return          \c 0 on success.
  */
 int dots_msg_recv(void *buf, size_t len, size_t sender, size_t *recv_len);
+
+DOTS_EXTERNC_END
 
 #endif

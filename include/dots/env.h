@@ -9,6 +9,9 @@
 #define DOTS_ENV_H
 
 #include <stddef.h>
+#include "dots/defs.h"
+
+DOTS_EXTERNC_BEGIN
 
 /**
  * \brief   Rank of the DoTS application.
@@ -70,5 +73,7 @@ int dots_env_init(void);
  * \brief   Destroy resources allocated for the DoTS environment.
  */
 void dots_env_finalize(void);
+
+DOTS_EXTERNC_END
 
 #endif

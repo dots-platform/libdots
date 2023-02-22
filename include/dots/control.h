@@ -8,6 +8,9 @@
 #define DOTS_CONTROL_H
 
 #include <stddef.h>
+#include "dots/defs.h"
+
+DOTS_EXTERNC_BEGIN
 
 /**
  * \brief               Requests an additional socket connected to another DoTS
@@ -22,5 +25,7 @@
  *                      error code on failure.
  */
 int dots_open_socket(size_t other_rank);
+
+DOTS_EXTERNC_END
 
 #endif
