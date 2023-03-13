@@ -9,7 +9,8 @@ DEPS = $(OBJS:.o=.d)
 CPPFLAGS = -MMD -Iinclude
 CFLAGS = -std=c11 -pedantic -pedantic-errors -fPIC -O3 -Wall -Wextra -Werror
 LDFLAGS = -shared
-LDLIBS =
+LDLIBS = \
+	-lpthread
 
 all: FORCE $(TARGET_SO) $(TARGET_AR) example
 

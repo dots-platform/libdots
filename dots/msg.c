@@ -1,4 +1,5 @@
 #include "dots/msg.h"
+#include <pthread.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,9 +34,13 @@ static int comp_rank_tag_socket(size_t rank, int tag,
 /* Get or create a tag_socket entry in tag_sockets for the given tag. Use a
  * binary search to get the position to insert or return. */
 static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
+    static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
     int ret;
 
-    // TODO Locking.
+    if (pthread_mutex_lock(&lock)) {
+        ret = DOTS_ERR_LIBC;
+        goto exit;
+    }
 
     /* Binary search to search for the rank_tag_socket. */
     size_t left = 0;
@@ -57,6 +62,13 @@ static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
     if (rank_tag_sockets_len == 0
             || rank_tag_sockets[left].rank != rank
             || rank_tag_sockets[left].tag != tag) {
+        /* Open a new socket. */
+        ret = dots_open_socket(rank);
+        if (ret < 0) {
+            goto exit_unlock;
+        }
+        int new_socket = ret;
+
         /* Extend array if needed. */
         if (rank_tag_sockets_len == rank_tag_sockets_cap) {
             size_t new_cap =
@@ -67,18 +79,11 @@ static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
                 realloc(rank_tag_sockets, new_cap * sizeof(*rank_tag_sockets));
             if (!new_rank_tag_sockets) {
                 ret = DOTS_ERR_LIBC;
-                goto exit;
+                goto exit_unlock;
             }
             rank_tag_sockets = new_rank_tag_sockets;
             rank_tag_sockets_cap = new_cap;
         }
-
-        /* Open a new socket. */
-        ret = dots_open_socket(rank);
-        if (ret < 0) {
-            goto exit;
-        }
-        int new_socket = ret;
 
         /* Insert into sorted position in array. */
         memmove(rank_tag_sockets + left + 1, rank_tag_sockets + left,
@@ -94,6 +99,8 @@ static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
 
     ret = 0;
 
+exit_unlock:
+    pthread_mutex_unlock(&lock);
 exit:
     return ret;
 }
