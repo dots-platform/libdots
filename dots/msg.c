@@ -1,9 +1,14 @@
 #include "dots/msg.h"
+#include <arpa/inet.h>
+#include <assert.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include "dots/control.h"
 #include "dots/env.h"
 #include "dots/err.h"
@@ -62,27 +67,90 @@ static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
     if (rank_tag_sockets_len == 0
             || rank_tag_sockets[left].rank != rank
             || rank_tag_sockets[left].tag != tag) {
-        /* Open a new socket. */
-        ret = dots_open_socket(rank);
-        if (ret < 0) {
-            goto exit_unlock;
-        }
-        int new_socket = ret;
+        bool found_our_socket = false;
+        int new_socket;
+        while (!found_our_socket) {
+            /* Extend array if needed. */
+            if (rank_tag_sockets_len == rank_tag_sockets_cap) {
+                size_t new_cap =
+                    rank_tag_sockets_cap > 0
+                        ? rank_tag_sockets_cap * 2
+                        : INITIAL_RANK_TAG_SOCKETS_CAP;
+                struct rank_tag_socket *new_rank_tag_sockets =
+                    realloc(rank_tag_sockets, new_cap * sizeof(*rank_tag_sockets));
+                if (!new_rank_tag_sockets) {
+                    ret = DOTS_ERR_LIBC;
+                    goto exit_unlock;
+                }
+                rank_tag_sockets = new_rank_tag_sockets;
+                rank_tag_sockets_cap = new_cap;
+            }
 
-        /* Extend array if needed. */
-        if (rank_tag_sockets_len == rank_tag_sockets_cap) {
-            size_t new_cap =
-                rank_tag_sockets_cap > 0
-                    ? rank_tag_sockets_cap * 2
-                    : INITIAL_RANK_TAG_SOCKETS_CAP;
-            struct rank_tag_socket *new_rank_tag_sockets =
-                realloc(rank_tag_sockets, new_cap * sizeof(*rank_tag_sockets));
-            if (!new_rank_tag_sockets) {
-                ret = DOTS_ERR_LIBC;
+            /* Open a new socket. */
+            ret = dots_open_socket(rank);
+            if (ret < 0) {
                 goto exit_unlock;
             }
-            rank_tag_sockets = new_rank_tag_sockets;
-            rank_tag_sockets_cap = new_cap;
+            new_socket = ret;
+
+            /* If our rank < the other rank, send the tag through the socket to
+             * establish ownership. If our rank > the other rank, receive the
+             * tag through the socket to check ownership. */
+            if (dots_world_rank < rank) {
+                uint32_t tag_msg = htonl((unsigned int) tag);
+                if (send(new_socket, &tag_msg, sizeof(tag_msg), 0)
+                        != sizeof(tag_msg)) {
+                    ret = DOTS_ERR_LIBC;
+                    close(new_socket);
+                    goto exit_unlock;
+                }
+                found_our_socket = true;
+            } else {
+                uint32_t tag_msg;
+                if (recv(new_socket, &tag_msg, sizeof(tag_msg), 0)
+                        != sizeof(tag_msg)) {
+                    ret = DOTS_ERR_LIBC;
+                    close(new_socket);
+                    goto exit_unlock;
+                }
+                int other_tag = (int) ntohl(tag_msg);
+                if (other_tag == tag) {
+                    /* Socket belongs to our tag. */
+                    found_our_socket = true;
+                } else {
+                    /* Socket doesn't belong to our tag. Find where this socket
+                     * belonging to somewhere else should go and insert it
+                     * there. */
+                    size_t other_left = 0;
+                    size_t other_right = rank_tag_sockets_len;
+                    while (other_left < other_right) {
+                        size_t other_mid = (other_left + other_right) / 2;
+                        int comp =
+                            comp_rank_tag_socket(rank, other_tag,
+                                    &rank_tag_sockets[other_mid]);
+                        assert(comp != 0); /* Should not have duplicate tag. */
+                        if (comp < 0) {
+                            other_right = other_mid;
+                        } else {
+                            other_left = other_mid;
+                        }
+                    }
+
+                    /* Insert into sorted position in array. */
+                    memmove(rank_tag_sockets + other_left + 1,
+                            rank_tag_sockets + other_left,
+                            (rank_tag_sockets_len - other_left)
+                                * sizeof(*rank_tag_sockets));
+                    rank_tag_sockets[other_left].rank = rank;
+                    rank_tag_sockets[other_left].tag = tag;
+                    rank_tag_sockets[other_left].socket = new_socket;
+                    if (other_tag < tag) {
+                        left++;
+                        right++;
+                    }
+                    rank_tag_sockets_len++;
+                }
+            }
         }
 
         /* Insert into sorted position in array. */
