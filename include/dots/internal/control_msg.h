@@ -12,8 +12,11 @@ struct control_msg_hdr {
     uint16_t type;
     uint16_t unused0;
     uint32_t payload_len;
-    uint64_t unused1;
+    unsigned char unused1[24];
 } PACKED;
+
+_Static_assert(sizeof(struct control_msg_hdr) == 32,
+        "Control message header size is not 32 bytes!");
 
 struct control_msg_request_socket {
     uint32_t other_rank;
@@ -23,7 +26,7 @@ struct control_msg {
     struct control_msg_hdr hdr;
     union {
         struct control_msg_request_socket request_socket;
-        unsigned char bytes[CONTROL_MSG_SIZE - sizeof(struct control_msg_hdr)];
+        unsigned char bytes[32];
     } PACKED data;
     unsigned char payload[];
 } PACKED;
