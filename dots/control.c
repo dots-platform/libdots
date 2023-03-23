@@ -8,6 +8,26 @@
 #include "dots/env.h"
 #include "dots/err.h"
 
+static int sendall(int fd, const void *buf_, size_t len) {
+    const unsigned char *buf = buf_;
+    int ret;
+
+    while (len) {
+        int bytes_sent = send(fd, buf, len, 0);
+        if (bytes_sent < 0) {
+            ret = DOTS_ERR_LIBC;
+            goto exit;
+        }
+        buf += bytes_sent;
+        len -= bytes_sent;
+    }
+
+    ret = 0;
+
+exit:
+    return ret;
+}
+
 /* Send a message to the control socket. Messages are always a 4-byte length
  * followed by the message payload. */
 static int send_control_msg(const void *buf_, size_t len) {
@@ -23,31 +43,15 @@ static int send_control_msg(const void *buf_, size_t len) {
     uint32_t len_bytes = htonl(len);
 
     /* Send length. */
-    size_t bytes_to_send = sizeof(len_bytes);
-    size_t sent_so_far = 0;
-    while (sent_so_far < bytes_to_send) {
-        int bytes_sent =
-            send(dots_control_socket,
-                    (const unsigned char *) &len_bytes + sent_so_far,
-                    sizeof(len_bytes) - sent_so_far, 0);
-        if (bytes_sent < 0) {
-            ret = DOTS_ERR_LIBC;
-            goto exit;
-        }
-        sent_so_far += bytes_sent;
+    ret = sendall(dots_control_socket, &len_bytes, sizeof(len_bytes));
+    if (ret) {
+        goto exit;
     }
 
     /* Send message. */
-    bytes_to_send = len;
-    sent_so_far = 0;
-    while (sent_so_far < len) {
-        int bytes_sent =
-            send(dots_control_socket, buf + sent_so_far, len - sent_so_far, 0);
-        if (bytes_sent < 0) {
-            ret = DOTS_ERR_LIBC;
-            goto exit;
-        }
-        sent_so_far += bytes_sent;
+    ret = sendall(dots_control_socket, buf, len);
+    if (ret) {
+        goto exit;
     }
 
     ret = 0;
