@@ -145,6 +145,9 @@ int dots_open_socket(size_t other_rank) {
 
     /* Receive a file descriptor from the control socket. */
     ret = recvfd(dots_control_socket);
+    if (ret) {
+        goto exit;
+    }
 
 exit:
     return ret;
