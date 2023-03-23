@@ -3,10 +3,10 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <sys/socket.h>
 #include "dots/env.h"
 #include "dots/err.h"
+#include "dots/internal/control_msg.h"
 
 static int sendall(int fd, const void *buf_, size_t len) {
     const unsigned char *buf = buf_;
@@ -30,26 +30,29 @@ exit:
 
 /* Send a message to the control socket. Messages are always a 4-byte length
  * followed by the message payload. */
-static int send_control_msg(const void *buf_, size_t len) {
+static int send_control_msg(struct control_msg *msg, uint16_t type,
+        const void *payload, size_t payload_len) {
     // TODO This is probably something that would want locking.
-    const unsigned char *buf = buf_;
     int ret;
 
+    /* Set message header values. */
+    msg->hdr.type = htons(type);
+
     /* Ensure length fits within 4 bytes. */
-    if (len > UINT32_MAX) {
+    if (payload_len > UINT32_MAX) {
         ret = DOTS_ERR_INTERNAL;
         goto exit;
     }
-    uint32_t len_bytes = htonl(len);
+    msg->hdr.payload_len = htonl(payload_len);
 
-    /* Send length. */
-    ret = sendall(dots_control_socket, &len_bytes, sizeof(len_bytes));
+    /* Send header. */
+    ret = sendall(dots_control_socket, msg, sizeof(*msg));
     if (ret) {
         goto exit;
     }
 
-    /* Send message. */
-    ret = sendall(dots_control_socket, buf, len);
+    /* Send payload. */
+    ret = sendall(dots_control_socket, payload, payload_len);
     if (ret) {
         goto exit;
     }
@@ -115,30 +118,12 @@ exit:
 int dots_open_socket(size_t other_rank) {
     int ret;
 
-    /* The DoTS server expects the arguments to be passed in the same order, so
-     * choose the lower rank as the first rank. */
-    size_t first_rank;
-    size_t second_rank;
-    if (dots_world_rank < other_rank) {
-        first_rank = dots_world_rank;
-        second_rank = other_rank;
-    } else {
-        first_rank = other_rank;
-        second_rank = dots_world_rank;
-    }
-
     /* Generate the message. */
-    char cmsg[128];
-    size_t cmsg_len =
-        snprintf(cmsg, sizeof(cmsg), "REQUEST_SOCKET %zu %zu", first_rank,
-                second_rank);
-    if (cmsg_len >= 128) {
-        ret = DOTS_ERR_INTERFACE;
-        goto exit;
-    }
+    struct control_msg msg;
+    msg.data.request_socket.other_rank = htonl(other_rank);
 
     /* Send the message to the control socket. */
-    ret = send_control_msg(cmsg, cmsg_len);
+    ret = send_control_msg(&msg, CONTROL_MSG_TYPE_REQUEST_SOCKET, NULL, 0);
     if (ret) {
         goto exit;
     }

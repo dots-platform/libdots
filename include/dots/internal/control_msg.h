@@ -6,6 +6,8 @@
 
 #define CONTROL_MSG_SIZE 64
 
+#define CONTROL_MSG_TYPE_REQUEST_SOCKET 1u
+
 struct control_msg_hdr {
     uint16_t type;
     uint16_t unused0;
@@ -13,9 +15,14 @@ struct control_msg_hdr {
     uint64_t unused1;
 } PACKED;
 
+struct control_msg_request_socket {
+    uint32_t other_rank;
+};
+
 struct control_msg {
     struct control_msg_hdr hdr;
     union {
+        struct control_msg_request_socket request_socket;
         unsigned char bytes[CONTROL_MSG_SIZE - sizeof(struct control_msg_hdr)];
     } PACKED data;
     unsigned char payload[];
