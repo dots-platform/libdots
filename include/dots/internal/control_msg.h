@@ -1,6 +1,7 @@
 #ifndef DOTS_INTERNAL_CONTROL_MSG_H
 #define DOTS_INTERNAL_CONTROL_MSG_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "dots/internal/defs.h"
 
@@ -33,5 +34,8 @@ struct control_msg {
 
 _Static_assert(sizeof(struct control_msg) == CONTROL_MSG_SIZE,
         "Control message size is not 64 bytes!");
+
+int dots_send_control_msg(struct control_msg *msg, uint16_t type,
+        const void *payload, size_t payload_len);
 
 #endif

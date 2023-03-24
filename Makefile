@@ -3,7 +3,8 @@ TARGET_AR = libdots.a
 OBJS = \
 	dots/control.o \
 	dots/env.o \
-	dots/msg.o
+	dots/msg.o \
+	dots/internal/control_msg.o
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude
