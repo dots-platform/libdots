@@ -110,7 +110,7 @@ int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
     }
 
     /* Receive payload. */
-    ret = recvall(dots_control_socket, payload, *payload_len);
+    ret = recvall(dots_control_socket, *payload, *payload_len);
     if (ret) {
         goto exit_free_payload;
     }

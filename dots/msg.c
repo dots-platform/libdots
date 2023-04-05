@@ -62,6 +62,11 @@ int dots_msg_recv(void *buf_, size_t len, size_t sender, int tag,
         goto exit;
     }
 
+    size_t ignored_recv_len;
+    if (!recv_len) {
+        recv_len = &ignored_recv_len;
+    }
+
     /* Construct a MSG_RECV control message. */
     struct control_msg msg = {
         .data = {
@@ -73,20 +78,33 @@ int dots_msg_recv(void *buf_, size_t len, size_t sender, int tag,
     };
 
     /* Send control message. */
-    ret = dots_send_control_msg(&msg, CONTROL_MSG_TYPE_MSG_SEND, buf, len);
+    ret = dots_send_control_msg(&msg, CONTROL_MSG_TYPE_MSG_RECV, NULL, 0);
     if (ret) {
         goto exit;
     }
 
     /* Receive data. */
-
-    /* This is always set to len for now. */
-    if (recv_len) {
-        *recv_len = len;
+    uint16_t msg_type;
+    void *recv_data;
+    ret = dots_recv_control_msg(&msg, &msg_type, &recv_data, recv_len);
+    if (ret) {
+        goto exit;
     }
+
+    assert(msg_type == CONTROL_MSG_TYPE_MSG_RECV_RESP);
+
+    /* If the buffer is too small, return an error. */
+    if (len < *recv_len) {
+        ret = DOTS_ERR_MSG_RECV_BUF_TOO_SMALL;
+        goto exit;
+    }
+
+    /* Copy received data into user buffer. */
+    memcpy(buf, recv_data, *recv_len);
 
     ret = 0;
 
+    free(recv_data);
 exit:
     return ret;
 }

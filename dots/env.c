@@ -131,6 +131,20 @@ int dots_env_init(void) {
     }
     dots_world_rank = parsed_int;
 
+    /* Parse world size. */
+    line_len = dots_getline(&line, &line_buflen, stdin);
+    if (line_len == SIZE_MAX) {
+        ret = DOTS_ERR_LIBC;
+        goto exit_free_line;
+    }
+    parsed_int = strtoll(line, &line_endptr, 10);
+    if (parsed_int < 0 || line_endptr == line
+            || (line_endptr && *line_endptr != '\n')) {
+        ret = DOTS_ERR_INTERFACE;
+        goto exit_free_line;
+    }
+    dots_world_size = parsed_int;
+
     /* Parse input FDs. */
     line_len = dots_getline(&line, &line_buflen, stdin);
     if (line_len == SIZE_MAX) {
