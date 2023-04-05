@@ -1,7 +1,6 @@
 #include "dots/msg.h"
 #include <arpa/inet.h>
 #include <assert.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,6 +11,7 @@
 #include "dots/control.h"
 #include "dots/env.h"
 #include "dots/err.h"
+#include "dots/internal/control_msg.h"
 
 #define INITIAL_RANK_TAG_SOCKETS_CAP 8
 
@@ -20,158 +20,6 @@ struct rank_tag_socket {
     int tag;
     int socket;
 };
-
-/* A sorted list of tag -> socket. */
-static struct rank_tag_socket *rank_tag_sockets;
-static size_t rank_tag_sockets_len;
-static size_t rank_tag_sockets_cap;
-
-/* Comparator for rank_tag_socket. */
-static int comp_rank_tag_socket(size_t rank, int tag,
-        const struct rank_tag_socket *rank_tag_socket) {
-    if (rank_tag_socket->rank != rank) {
-        return (rank > rank_tag_socket->rank) - (rank < rank_tag_socket->rank);
-    } else {
-        return tag - rank_tag_socket->tag;
-    }
-}
-
-/* Get or create a tag_socket entry in tag_sockets for the given tag. Use a
- * binary search to get the position to insert or return. */
-static int get_or_create_rank_tag_socket(size_t rank, int tag, int *socket) {
-    static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-    int ret;
-
-    if (pthread_mutex_lock(&lock)) {
-        ret = DOTS_ERR_LIBC;
-        goto exit;
-    }
-
-    /* Binary search to search for the rank_tag_socket. */
-    size_t left = 0;
-    size_t right = rank_tag_sockets_len;
-    while (left < right) {
-        size_t mid = (left + right) / 2;
-        int comp = comp_rank_tag_socket(rank, tag, &rank_tag_sockets[mid]);
-        if (comp == 0) {
-            left = mid;
-            break;
-        } else if (comp < 0) {
-            right = mid;
-        } else {
-            left = mid + 1;
-        }
-    }
-
-    /* Insert if needed. */
-    if (rank_tag_sockets_len == 0
-            || rank_tag_sockets[left].rank != rank
-            || rank_tag_sockets[left].tag != tag) {
-        bool found_our_socket = false;
-        int new_socket;
-        while (!found_our_socket) {
-            /* Extend array if needed. */
-            if (rank_tag_sockets_len == rank_tag_sockets_cap) {
-                size_t new_cap =
-                    rank_tag_sockets_cap > 0
-                        ? rank_tag_sockets_cap * 2
-                        : INITIAL_RANK_TAG_SOCKETS_CAP;
-                struct rank_tag_socket *new_rank_tag_sockets =
-                    realloc(rank_tag_sockets, new_cap * sizeof(*rank_tag_sockets));
-                if (!new_rank_tag_sockets) {
-                    ret = DOTS_ERR_LIBC;
-                    goto exit_unlock;
-                }
-                rank_tag_sockets = new_rank_tag_sockets;
-                rank_tag_sockets_cap = new_cap;
-            }
-
-            /* Open a new socket. */
-            ret = dots_open_socket(rank);
-            if (ret < 0) {
-                goto exit_unlock;
-            }
-            new_socket = ret;
-
-            /* If our rank < the other rank, send the tag through the socket to
-             * establish ownership. If our rank > the other rank, receive the
-             * tag through the socket to check ownership. */
-            if (dots_world_rank < rank) {
-                uint32_t tag_msg = htonl((unsigned int) tag);
-                if (send(new_socket, &tag_msg, sizeof(tag_msg), 0)
-                        != sizeof(tag_msg)) {
-                    ret = DOTS_ERR_LIBC;
-                    close(new_socket);
-                    goto exit_unlock;
-                }
-                found_our_socket = true;
-            } else {
-                uint32_t tag_msg;
-                if (recv(new_socket, &tag_msg, sizeof(tag_msg), 0)
-                        != sizeof(tag_msg)) {
-                    ret = DOTS_ERR_LIBC;
-                    close(new_socket);
-                    goto exit_unlock;
-                }
-                int other_tag = (int) ntohl(tag_msg);
-                if (other_tag == tag) {
-                    /* Socket belongs to our tag. */
-                    found_our_socket = true;
-                } else {
-                    /* Socket doesn't belong to our tag. Find where this socket
-                     * belonging to somewhere else should go and insert it
-                     * there. */
-                    size_t other_left = 0;
-                    size_t other_right = rank_tag_sockets_len;
-                    while (other_left < other_right) {
-                        size_t other_mid = (other_left + other_right) / 2;
-                        int comp =
-                            comp_rank_tag_socket(rank, other_tag,
-                                    &rank_tag_sockets[other_mid]);
-                        assert(comp != 0); /* Should not have duplicate tag. */
-                        if (comp < 0) {
-                            other_right = other_mid;
-                        } else {
-                            other_left = other_mid;
-                        }
-                    }
-
-                    /* Insert into sorted position in array. */
-                    memmove(rank_tag_sockets + other_left + 1,
-                            rank_tag_sockets + other_left,
-                            (rank_tag_sockets_len - other_left)
-                                * sizeof(*rank_tag_sockets));
-                    rank_tag_sockets[other_left].rank = rank;
-                    rank_tag_sockets[other_left].tag = tag;
-                    rank_tag_sockets[other_left].socket = new_socket;
-                    if (other_tag < tag) {
-                        left++;
-                        right++;
-                    }
-                    rank_tag_sockets_len++;
-                }
-            }
-        }
-
-        /* Insert into sorted position in array. */
-        memmove(rank_tag_sockets + left + 1, rank_tag_sockets + left,
-                (rank_tag_sockets_len - left) * sizeof(*rank_tag_sockets));
-        rank_tag_sockets[left].rank = rank;
-        rank_tag_sockets[left].tag = tag;
-        rank_tag_sockets[left].socket = new_socket;
-        rank_tag_sockets_len++;
-    }
-
-    /* Return socket. */
-    *socket = rank_tag_sockets[left].socket;
-
-    ret = 0;
-
-exit_unlock:
-    pthread_mutex_unlock(&lock);
-exit:
-    return ret;
-}
 
 int dots_msg_send(const void *buf_, size_t len, size_t recipient, int tag) {
     const unsigned char *buf = buf_;
@@ -182,29 +30,20 @@ int dots_msg_send(const void *buf_, size_t len, size_t recipient, int tag) {
         goto exit;
     }
 
-    int socket;
-    if (tag == 0) {
-        socket = dots_comm_sockets[recipient];
-    } else {
-        ret = get_or_create_rank_tag_socket(recipient, tag, &socket);
-        if (ret) {
-            goto exit;
-        }
-    }
+    /* Construct a MSG_SEND control message. */
+    struct control_msg msg = {
+        .data = {
+            .msg_send = {
+                .recipient = htonl(recipient),
+                .tag = htonl(tag),
+            },
+        },
+    };
 
-    size_t sent_so_far = 0;
-    while (sent_so_far < len) {
-        int bytes_sent = send(socket, buf + sent_so_far, len - sent_so_far, 0);
-        if (bytes_sent < 0) {
-            ret = DOTS_ERR_LIBC;
-            goto exit;
-        }
-        if (bytes_sent == 0) {
-            ret = DOTS_ERR_INTERFACE;
-            goto exit;
-        }
-
-        sent_so_far += bytes_sent;
+    /* Send control message. */
+    ret = dots_send_control_msg(&msg, CONTROL_MSG_TYPE_MSG_SEND, buf, len);
+    if (ret) {
+        goto exit;
     }
 
     ret = 0;
@@ -223,31 +62,23 @@ int dots_msg_recv(void *buf_, size_t len, size_t sender, int tag,
         goto exit;
     }
 
-    int socket;
-    if (tag == 0) {
-        socket = dots_comm_sockets[sender];
-    } else {
-        ret = get_or_create_rank_tag_socket(sender, tag, &socket);
-        if (ret) {
-            goto exit;
-        }
+    /* Construct a MSG_RECV control message. */
+    struct control_msg msg = {
+        .data = {
+            .msg_recv = {
+                .sender = htonl(sender),
+                .tag = htonl(tag),
+            },
+        },
+    };
+
+    /* Send control message. */
+    ret = dots_send_control_msg(&msg, CONTROL_MSG_TYPE_MSG_SEND, buf, len);
+    if (ret) {
+        goto exit;
     }
 
-    size_t recvd_so_far = 0;
-    while (recvd_so_far < len) {
-        int bytes_recvd =
-            recv(socket, buf + recvd_so_far, len - recvd_so_far, 0);
-        if (bytes_recvd < 0) {
-            ret = DOTS_ERR_LIBC;
-            goto exit;
-        }
-        if (bytes_recvd == 0) {
-            ret = DOTS_ERR_INTERFACE;
-            goto exit;
-        }
-
-        recvd_so_far += bytes_recvd;
-    }
+    /* Receive data. */
 
     /* This is always set to len for now. */
     if (recv_len) {

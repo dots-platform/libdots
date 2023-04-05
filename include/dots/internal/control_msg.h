@@ -8,6 +8,8 @@
 #define CONTROL_MSG_SIZE 64
 
 #define CONTROL_MSG_TYPE_REQUEST_SOCKET 1u
+#define CONTROL_MSG_TYPE_MSG_SEND 2u
+#define CONTROL_MSG_TYPE_MSG_RECV 3u
 
 struct control_msg_hdr {
     uint16_t type;
@@ -23,10 +25,22 @@ struct control_msg_request_socket {
     uint32_t other_rank;
 };
 
+struct control_msg_msg_send {
+    uint32_t recipient;
+    uint32_t tag;
+};
+
+struct control_msg_msg_recv {
+    uint32_t sender;
+    uint32_t tag;
+};
+
 struct control_msg {
     struct control_msg_hdr hdr;
     union {
         struct control_msg_request_socket request_socket;
+        struct control_msg_msg_send msg_send;
+        struct control_msg_msg_recv msg_recv;
         unsigned char bytes[32];
     } PACKED data;
     unsigned char payload[];

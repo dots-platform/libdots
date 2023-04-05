@@ -15,7 +15,6 @@
 
 size_t dots_world_rank;
 size_t dots_world_size;
-int *dots_comm_sockets;
 int *dots_in_fds;
 size_t dots_in_fds_len;
 int *dots_out_fds;
@@ -154,19 +153,11 @@ int dots_env_init(void) {
         goto exit_free_out_fds;
     }
 
-    /* Parse communication sockets. */
-    line_len = dots_getline(&line, &line_buflen, stdin);
-    if (line_len == SIZE_MAX) {
-        ret = DOTS_ERR_LIBC;
-        goto exit_free_out_fds;
-    }
-    ret = parse_int_line(line, &dots_comm_sockets, &dots_world_size);
-
     /* Get function name. We'll use the line buffer for this. */
     line_len = dots_getline(&line, &line_buflen, stdin);
     if (line_len == SIZE_MAX) {
         ret = DOTS_ERR_LIBC;
-        goto exit_free_comm_sockets;
+        goto exit_free_out_fds;
     }
     if (line[line_len - 1] == '\n') {
         line[line_len - 1] = '\0';
@@ -175,7 +166,7 @@ int dots_env_init(void) {
     char *new_line = realloc(line, line_len + 1);
     if (!new_line) {
         ret = DOTS_ERR_LIBC;
-        goto exit_free_comm_sockets;
+        goto exit_free_out_fds;
     }
     line = new_line;
     dots_func_name = line;
@@ -186,7 +177,7 @@ int dots_env_init(void) {
     dots_control_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (dots_control_socket < 0) {
         ret = DOTS_ERR_LIBC;
-        goto exit_free_comm_sockets;
+        goto exit_free_out_fds;
     }
     struct sockaddr_un addr = {
         .sun_family = AF_UNIX,
@@ -206,8 +197,6 @@ int dots_env_init(void) {
 
 exit_close_control_socket:
     close(dots_control_socket);
-exit_free_comm_sockets:
-    free(dots_comm_sockets);
 exit_free_out_fds:
     free(dots_out_fds);
 exit_free_in_fds:
@@ -220,6 +209,5 @@ exit_free_line:
 void dots_env_finalize(void) {
     free(dots_in_fds);
     free(dots_out_fds);
-    free(dots_comm_sockets);
     free(dots_func_name);
 }
