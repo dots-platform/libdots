@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <limits.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -55,7 +56,7 @@ exit:
 /* Send a message to the control socket. */
 int dots_send_control_msg(struct control_msg *msg, uint16_t type,
         const void *payload, size_t payload_len) {
-    // TODO This is probably something that would want locking.
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
 
     /* Set message header values. */
@@ -68,20 +69,24 @@ int dots_send_control_msg(struct control_msg *msg, uint16_t type,
     }
     msg->hdr.payload_len = htonl(payload_len);
 
+    pthread_mutex_lock(&mutex);
+
     /* Send header. */
     ret = sendall(dots_control_socket, msg, sizeof(*msg));
     if (ret) {
-        goto exit;
+        goto exit_unlock_mutex;
     }
 
     /* Send payload. */
     ret = sendall(dots_control_socket, payload, payload_len);
     if (ret) {
-        goto exit;
+        goto exit_unlock_mutex;
     }
 
     ret = 0;
 
+exit_unlock_mutex:
+    pthread_mutex_unlock(&mutex);
 exit:
     return ret;
 }
@@ -89,13 +94,15 @@ exit:
 /* Receive a message from the control socket. */
 int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
         void **payload, size_t *payload_len) {
-    // TODO This is probably something that would want locking.
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
+
+    pthread_mutex_lock(&mutex);
 
     /* Receive header. */
     ret = recvall(dots_control_socket, msg, sizeof(*msg));
     if (ret) {
-        goto exit;
+        goto exit_unlock_mutex;
     }
 
     /* Parse header values. */
@@ -106,7 +113,7 @@ int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
     *payload = malloc(*payload_len);
     if (!*payload) {
         ret = DOTS_ERR_LIBC;
-        goto exit;
+        goto exit_unlock_mutex;
     }
 
     /* Receive payload. */
@@ -117,10 +124,11 @@ int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
 
     ret = 0;
 
-    return ret;
-
 exit_free_payload:
-    free(*payload);
-exit:
+    if (ret) {
+        free(*payload);
+    }
+exit_unlock_mutex:
+    pthread_mutex_unlock(&mutex);
     return ret;
 }
