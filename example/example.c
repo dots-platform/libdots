@@ -13,9 +13,9 @@ int main(void) {
 
     /* Send bytes between sockets for a while for testing. */
     uint32_t bytes;
-    for (int tag = 0; tag < 10; tag++) {
-        for (size_t sender = 0; sender < dots_world_size; sender++) {
-            if (dots_world_rank == sender) {
+    for (size_t sender = 0; sender < dots_world_size; sender++) {
+        if (dots_world_rank == sender) {
+            for (int tag = 0; tag < 10; tag++) {
                 bytes = htonl(sender * 10 + tag);
                 for (size_t recipient = 0; recipient < dots_world_size;
                         recipient++) {
@@ -30,7 +30,9 @@ int main(void) {
                     }
                     printf("Sent %zu to %zu\n", sender, recipient);
                 }
-            } else {
+            }
+        } else {
+            for (int tag = 9; tag >= 0; tag--) {
                 if (dots_msg_recv(&bytes, sizeof(bytes), sender, tag, NULL)) {
                     fprintf(stderr, "Failed receiving from %zu on tag %d\n",
                             sender, tag);
