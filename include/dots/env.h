@@ -24,11 +24,6 @@ extern size_t dots_world_rank;
 extern size_t dots_world_size;
 
 /**
- * \brief   Sockets used for inter-node communication by reading and writing.
- */
-extern int *dots_comm_sockets;
-
-/**
  * \brief   Read-only file descriptors for reading input files.
  */
 extern int *dots_in_fds;

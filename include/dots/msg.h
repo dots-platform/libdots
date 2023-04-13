@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include "dots/defs.h"
 
+#define DOTS_ERR_MSG_RECV_BUF_TOO_SMALL (-0x1000)
+
 DOTS_EXTERNC_BEGIN
 
 /**
