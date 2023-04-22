@@ -224,4 +224,5 @@ void dots_env_finalize(void) {
     free(dots_in_fds);
     free(dots_out_fds);
     free(dots_func_name);
+    close(dots_control_socket);
 }
