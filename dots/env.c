@@ -5,9 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
 #include "dots/err.h"
 #include "dots/internal/defs.h"
 
@@ -19,7 +16,8 @@ struct env_input {
     uint32_t output_files_offset;
     uint32_t output_files_count;
     uint32_t func_name_offset;
-    unsigned char unused[100];
+    uint32_t control_socket;
+    unsigned char unused[96];
     unsigned char data[];
 } PACKED;
 
@@ -59,67 +57,35 @@ int dots_env_init(void) {
         ret = DOTS_ERR_INTERFACE;
         goto exit;
     }
-    env_input->world_rank = ntohl(env_input->world_rank);
-    env_input->world_size = ntohl(env_input->world_size);
-    env_input->input_files_offset = ntohl(env_input->input_files_offset);
-    env_input->input_files_count = ntohl(env_input->input_files_count);
-    env_input->output_files_offset = ntohl(env_input->output_files_offset);
-    env_input->output_files_count = ntohl(env_input->output_files_count);
-    env_input->func_name_offset = ntohl(env_input->func_name_offset);
 
     /* Set environment vars. */
-    dots_world_rank = env_input->world_rank;
-    dots_world_size = env_input->world_size;
+    dots_world_rank = ntohl(env_input->world_rank);
+    dots_world_size = ntohl(env_input->world_size);
     dots_in_fds =
         (int32_t *) ((unsigned char *) env_input
-                + env_input->input_files_offset);
-    dots_in_fds_len = env_input->input_files_count;
+                + ntohl(env_input->input_files_offset));
+    dots_in_fds_len = ntohl(env_input->input_files_count);
     for (size_t i = 0; i < dots_in_fds_len; i++) {
         dots_in_fds[i] = ntohl(dots_in_fds[i]);
     }
     dots_out_fds =
         (int32_t *) ((unsigned char *) env_input
-                + env_input->output_files_offset);
-    dots_out_fds_len = env_input->output_files_count;
+                + ntohl(env_input->output_files_offset));
+    dots_out_fds_len = ntohl(env_input->output_files_count);
     for (size_t i = 0; i < dots_out_fds_len; i++) {
         dots_out_fds[i] = ntohl(dots_out_fds[i]);
     }
     dots_func_name =
-        (char *) ((unsigned char *) env_input + env_input->func_name_offset);
-
-    /* Open control socket. */
-    // TODO Some more sane path handling here would be nice, or the DoTS server
-    // could just use a socketpair rather than relying on a socket in /tmp.
-    dots_control_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (dots_control_socket < 0) {
-        ret = DOTS_ERR_LIBC;
-        goto exit_free_env_input;
-    }
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-    };
-    if (snprintf(addr.sun_path, sizeof(addr.sun_path), "/tmp/socket-%d",
-                getpid())
-            >= (int) sizeof(addr.sun_path)) {
-        ret = DOTS_ERR_INTERNAL;
-        goto exit_close_control_socket;
-    }
-    if (connect(dots_control_socket, (struct sockaddr *) &addr, sizeof(addr))) {
-        ret = DOTS_ERR_LIBC;
-        goto exit_close_control_socket;
-    }
+        (char *) ((unsigned char *) env_input
+                + ntohl(env_input->func_name_offset));
+    dots_control_socket = ntohl(env_input->control_socket);
 
     return 0;
 
-exit_close_control_socket:
-    close(dots_control_socket);
-exit_free_env_input:
-    free(env_input);
 exit:
     return ret;
 }
 
 void dots_env_finalize(void) {
     free(env_input);
-    close(dots_control_socket);
 }
