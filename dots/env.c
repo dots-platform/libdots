@@ -59,33 +59,27 @@ int dots_env_init(void) {
         ret = DOTS_ERR_INTERFACE;
         goto exit;
     }
-    env_input->world_rank = ntohl(env_input->world_rank);
-    env_input->world_size = ntohl(env_input->world_size);
-    env_input->input_files_offset = ntohl(env_input->input_files_offset);
-    env_input->input_files_count = ntohl(env_input->input_files_count);
-    env_input->output_files_offset = ntohl(env_input->output_files_offset);
-    env_input->output_files_count = ntohl(env_input->output_files_count);
-    env_input->func_name_offset = ntohl(env_input->func_name_offset);
 
     /* Set environment vars. */
-    dots_world_rank = env_input->world_rank;
-    dots_world_size = env_input->world_size;
+    dots_world_rank = ntohl(env_input->world_rank);
+    dots_world_size = ntohl(env_input->world_size);
     dots_in_fds =
         (int32_t *) ((unsigned char *) env_input
-                + env_input->input_files_offset);
-    dots_in_fds_len = env_input->input_files_count;
+                + ntohl(env_input->input_files_offset));
+    dots_in_fds_len = ntohl(env_input->input_files_count);
     for (size_t i = 0; i < dots_in_fds_len; i++) {
         dots_in_fds[i] = ntohl(dots_in_fds[i]);
     }
     dots_out_fds =
         (int32_t *) ((unsigned char *) env_input
-                + env_input->output_files_offset);
-    dots_out_fds_len = env_input->output_files_count;
+                + ntohl(env_input->output_files_offset));
+    dots_out_fds_len = ntohl(env_input->output_files_count);
     for (size_t i = 0; i < dots_out_fds_len; i++) {
         dots_out_fds[i] = ntohl(dots_out_fds[i]);
     }
     dots_func_name =
-        (char *) ((unsigned char *) env_input + env_input->func_name_offset);
+        (char *) ((unsigned char *) env_input
+                + ntohl(env_input->func_name_offset));
 
     /* Open control socket. */
     // TODO Some more sane path handling here would be nice, or the DoTS server
