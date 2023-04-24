@@ -11,6 +11,9 @@ int main(void) {
         abort();
     }
 
+    size_t dots_world_rank = dots_env_get_world_rank();
+    size_t dots_world_size = dots_env_get_world_size();
+
     /* Send bytes between sockets for a while for testing. */
     uint32_t bytes;
     for (size_t sender = 0; sender < dots_world_size; sender++) {

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "dots/err.h"
 #include "dots/internal/defs.h"
 
@@ -23,8 +24,6 @@ struct env_input {
 
 static_assert(sizeof(struct env_input) == 128, "Size of environment input is not 128 bytes!");
 
-static struct env_input *env_input;
-
 size_t dots_world_rank;
 size_t dots_world_size;
 int32_t *dots_in_fds;
@@ -33,6 +32,8 @@ int32_t *dots_out_fds;
 size_t dots_out_fds_len;
 char *dots_func_name;
 int dots_control_socket;
+
+static struct env_input *env_input;
 
 int dots_env_init(void) {
     int ret;
@@ -88,4 +89,32 @@ exit:
 
 void dots_env_finalize(void) {
     free(env_input);
+}
+
+size_t dots_env_get_world_rank(void) {
+    return dots_world_rank;
+}
+
+size_t dots_env_get_world_size(void) {
+    return dots_world_size;
+}
+
+void dots_env_get_in_fds(int *fds) {
+    memcpy(fds, dots_in_fds, dots_in_fds_len * sizeof(*fds));
+}
+
+size_t dots_env_get_num_in_files(void) {
+    return dots_in_fds_len;
+}
+
+void dots_env_get_out_fds(int *fds) {
+    memcpy(fds, dots_out_fds, dots_out_fds_len * sizeof(*fds));
+}
+
+size_t dots_env_get_num_out_files(void) {
+    return dots_out_fds_len;
+}
+
+const char *dots_env_get_func_name(void) {
+    return dots_func_name;
 }

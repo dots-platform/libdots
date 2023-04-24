@@ -12,6 +12,7 @@
 #include "dots/env.h"
 #include "dots/err.h"
 #include "dots/internal/control_msg.h"
+#include "dots/internal/env.h"
 
 #define INITIAL_RANK_TAG_SOCKETS_CAP 8
 
