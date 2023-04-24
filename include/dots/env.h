@@ -13,6 +13,11 @@
 
 DOTS_EXTERNC_BEGIN
 
+typedef struct dots_env_arg {
+    unsigned char *ptr;
+    size_t length;
+} dots_env_arg_t;
+
 /**
  * \brief   Rank of the DoTS application.
  */
@@ -47,6 +52,16 @@ extern size_t dots_out_fds_len;
  * \brief   Name of the called function.
  */
 extern char *dots_func_name;
+
+/**
+ * \brief   Arguments passed to the DoTS application.
+ */
+extern dots_env_arg_t *dots_args;
+
+/**
+ * \brief   Length of \c dots_args.
+ */
+extern size_t dots_args_len;
 
 /**
  * \brief   The control socket to the DoTS server.
