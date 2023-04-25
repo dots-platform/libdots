@@ -1,13 +1,16 @@
 use std::ffi::CStr;
 
+use crate::*;
 use crate::ffi as ffi;
 
-pub fn init() -> Result<(), &'static str> {
+pub fn init() -> DotsResult<()> {
     unsafe {
-        if ffi::dots_env_init() != 0 {
-            return Err("dots_env_init");
+        let ret = ffi::dots_env_init();
+        if ret != 0 {
+            return Err(DotsError::from_ret(ret));
         }
     }
+
     Ok(())
 }
 
