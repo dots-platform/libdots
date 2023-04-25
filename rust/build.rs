@@ -7,9 +7,11 @@ use std::process::Command;
 use bindgen::CargoCallbacks;
 
 fn main() {
-    println!("cargo:rustc-link-search=..");
+    let lib_path = PathBuf::from("..").canonicalize().unwrap();
+
+    println!("cargo:rustc-link-search={}", lib_path.to_str().unwrap());
     println!("cargo:rustc-link-lib=static=dots");
-    println!("cargo:rerun-if-changed=../include/dots.h");
+    println!("cargo:rerun-if-changed={}", lib_path.join("include").join("dots.h").to_str().unwrap());
 
     if !Command::new("make")
         .arg("-C")
