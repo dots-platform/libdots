@@ -1,4 +1,6 @@
 use std::ffi::CStr;
+use std::fs::File;
+use std::os::unix::io::FromRawFd;
 
 use crate::*;
 use crate::ffi as ffi;
@@ -32,24 +34,38 @@ pub fn get_world_size() -> usize {
     }
 }
 
-pub fn get_in_fds() -> Vec<i32> {
-    unsafe {
+pub fn get_in_files() -> Vec<File> {
+    let in_fds = unsafe {
         let in_fds_len = ffi::dots_env_get_num_in_files();
         let mut in_fds = Vec::with_capacity(in_fds_len);
         ffi::dots_env_get_in_fds(in_fds.as_mut_ptr());
         in_fds.set_len(in_fds_len);
         in_fds
-    }
+    };
+
+    let mut in_files = Vec::with_capacity(in_fds.len());
+    for fd in in_fds {
+        let in_file = unsafe { File::from_raw_fd(fd) };
+        in_files.push(in_file)
+    };
+    in_files
 }
 
-pub fn get_out_fds() -> Vec<i32> {
-    unsafe {
+pub fn get_out_files() -> Vec<File> {
+    let out_fds = unsafe {
         let out_fds_len = ffi::dots_env_get_num_out_files();
         let mut out_fds = Vec::with_capacity(out_fds_len);
         ffi::dots_env_get_out_fds(out_fds.as_mut_ptr());
         out_fds.set_len(out_fds_len);
         out_fds
-    }
+    };
+
+    let mut out_files = Vec::with_capacity(out_fds.len());
+    for fd in out_fds {
+        let out_file = unsafe { File::from_raw_fd(fd) };
+        out_files.push(out_file)
+    };
+    out_files
 }
 
 pub fn get_func_name() -> String {
