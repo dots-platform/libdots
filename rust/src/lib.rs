@@ -1,10 +1,10 @@
-mod ffi;
+use std::error::Error;
+use std::fmt;
 
 pub mod env;
 pub mod msg;
 
-use std::error::Error;
-use std::fmt;
+mod ffi;
 
 #[derive(Debug)]
 pub enum DotsError {
