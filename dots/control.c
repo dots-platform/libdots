@@ -5,6 +5,7 @@
 #include "dots/env.h"
 #include "dots/err.h"
 #include "dots/internal/control_msg.h"
+#include "dots/internal/env.h"
 
 static int recvfd(int control_sock) {
     /* Prepare to receive a one-byte message with a single socket as ancillary

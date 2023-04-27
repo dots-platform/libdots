@@ -13,6 +13,8 @@ LDFLAGS = -shared
 LDLIBS = \
 	-lpthread
 
+RUST_DIR = rust
+
 all: FORCE $(TARGET_SO) $(TARGET_AR) example
 
 $(TARGET_SO): $(OBJS)
@@ -29,5 +31,11 @@ FORCE:
 
 example: $(TARGET_SO) FORCE
 	$(MAKE) -C example
+
+$(RUST_DIR): FORCE
+	rm -rf $(RUST_DIR)/libdots
+	mkdir $(RUST_DIR)/libdots
+	cp -R Makefile dots include $(RUST_DIR)/libdots
+	cd $(RUST_DIR) && cargo build
 
 -include $(DEPS)

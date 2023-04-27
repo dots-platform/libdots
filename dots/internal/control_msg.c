@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include "dots/env.h"
 #include "dots/err.h"
+#include "dots/internal/env.h"
 
 static_assert(sizeof(size_t) >= sizeof(uint32_t),
         "size_t must be able to hold at least a uint32_t");

@@ -1,0 +1,13 @@
+[package]
+name = "libdots"
+version = "0.1.1"
+edition = "2021"
+description = "Server application API for the Berkeley DoTS platform"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.65.1"
