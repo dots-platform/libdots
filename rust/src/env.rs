@@ -1,6 +1,8 @@
 use std::ffi::CStr;
 use std::fs::File;
+use std::mem::MaybeUninit;
 use std::os::unix::io::FromRawFd;
+use std::slice;
 
 use crate::*;
 use crate::ffi as ffi;
@@ -74,5 +76,17 @@ pub fn get_func_name() -> String {
             .to_owned()
             .into_string()
             .expect("Function name is not UTF-8 encoded")
+    }
+}
+
+pub fn get_args() -> Vec<Vec<u8>> {
+    unsafe {
+        let args_len = ffi::dots_env_get_num_args();
+        let mut arg_ptrs: Vec<ffi::dots_env_arg_t> = vec![MaybeUninit::uninit().assume_init(); args_len];
+        ffi::dots_env_get_args(arg_ptrs.as_mut_ptr());
+        arg_ptrs
+            .iter()
+            .map(|arg_ptr| slice::from_raw_parts(arg_ptr.ptr, arg_ptr.length).to_owned())
+            .collect()
     }
 }
