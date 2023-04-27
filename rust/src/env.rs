@@ -1,7 +1,6 @@
 use std::ffi::CStr;
 use std::fs::File;
-use std::mem;
-use std::mem::MaybeUninit;
+use std::mem::{self,MaybeUninit};
 use std::os::unix::io::FromRawFd;
 
 use crate::*;
