@@ -75,13 +75,15 @@ pub fn get_func_name() -> String {
 }
 
 pub fn get_args() -> Vec<Vec<u8>> {
-    unsafe {
+    let arg_ptrs: Vec<ffi::dots_env_arg_t> = unsafe {
         let args_len = ffi::dots_env_get_num_args();
-        let mut arg_ptrs: Vec<ffi::dots_env_arg_t> = vec![MaybeUninit::uninit().assume_init(); args_len];
-        ffi::dots_env_get_args(arg_ptrs.as_mut_ptr());
-        arg_ptrs
-            .iter()
-            .map(|arg_ptr| slice::from_raw_parts(arg_ptr.ptr, arg_ptr.length).to_owned())
-            .collect()
-    }
+        let mut arg_ptrs = vec![MaybeUninit::<ffi::dots_env_arg_t>::uninit(); args_len];
+        ffi::dots_env_get_args(mem::transmute(arg_ptrs.as_mut_ptr()));
+        mem::transmute(arg_ptrs)
+    };
+
+    arg_ptrs
+        .iter()
+        .map(|arg_ptr| unsafe { slice::from_raw_parts(arg_ptr.ptr, arg_ptr.length) }.to_owned())
+        .collect()
 }
