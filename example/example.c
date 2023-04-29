@@ -53,5 +53,20 @@ int main(void) {
         }
     }
 
+    /* Test some output. */
+    if (dots_outputf("Hello world!\n")) {
+        fprintf(stderr, "Failed to outputf static string\n");
+        abort();
+    }
+    if (dots_outputf("%s %d %d %d\n", "foobar", 1, 2, 3)) {
+        fprintf(stderr, "Failed to outputf formatted string\n");
+        abort();
+    }
+    unsigned char buf[] = { 1, 2, 3, 4, 5 };
+    if (dots_output(buf, sizeof(buf))) {
+        fprintf(stderr, "Failed to output raw buffer\n");
+        abort();
+    }
+
     dots_env_finalize();
 }
