@@ -2,7 +2,7 @@ use std::ffi::c_void;
 use std::mem::MaybeUninit;
 
 use crate::*;
-use crate::ffi as ffi;
+use crate::ffi;
 
 pub fn send(buf: &[u8], recipient: usize, tag: i32) -> DotsResult<()> {
     unsafe {
