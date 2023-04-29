@@ -4,7 +4,7 @@ use std::mem::{self,MaybeUninit};
 use std::os::unix::io::FromRawFd;
 
 use crate::*;
-use crate::ffi as ffi;
+use crate::ffi;
 
 pub fn init() -> DotsResult<()> {
     unsafe {
