@@ -53,24 +53,5 @@ int main(void) {
         }
     }
 
-    /* Open a second socket. */
-    if (dots_world_size >= 2) {
-        if (dots_world_rank == 0) {
-            int socket = dots_open_socket(1);
-            if (socket < 0) {
-                fprintf(stderr, "Failed to open socket to 0\n");
-                abort();
-            }
-            printf("Opened socket %d to %d\n", socket, 1);
-        } else if (dots_world_rank == 1) {
-            int socket = dots_open_socket(0);
-            if (socket < 0) {
-                fprintf(stderr, "Failed to open socket to 1\n");
-                abort();
-            }
-            printf("Opened socket %d to %d\n", socket, 0);
-        }
-    }
-
     dots_env_finalize();
 }
