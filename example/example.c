@@ -53,5 +53,22 @@ int main(void) {
         }
     }
 
+    /* Read arguments and dump them out. */
+    size_t num_args = dots_env_get_num_args();
+    dots_env_arg_t *args = malloc(num_args * sizeof(*args));
+    if (!args) {
+        perror("malloc args");
+        abort();
+    }
+    dots_env_get_args(args);
+    for (size_t i = 0; i < num_args; i++) {
+        printf("arg[%zu] as string: %s\n", i, (char *) args[i].ptr);
+        printf("arg[%zu] as bytes: ", i);
+        for (size_t j = 0; j < args[i].length; j++) {
+            printf("%02x", args[i].ptr[j]);
+        }
+        printf("\n");
+    }
+
     dots_env_finalize();
 }
