@@ -11,6 +11,7 @@
 #define CONTROL_MSG_TYPE_MSG_SEND 2u
 #define CONTROL_MSG_TYPE_MSG_RECV 3u
 #define CONTROL_MSG_TYPE_MSG_RECV_RESP 4u
+#define CONTROL_MSG_TYPE_OUTPUT 5u
 
 struct control_msg_hdr {
     uint16_t type;
