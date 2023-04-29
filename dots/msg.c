@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "dots/control.h"
 #include "dots/env.h"
 #include "dots/err.h"
 #include "dots/internal/control_msg.h"
