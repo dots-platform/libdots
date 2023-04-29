@@ -54,6 +54,8 @@ int dots_outputf(const char *fmt, ...) {
         if (ret) {
             goto exit_free_buf;
         }
+
+        break;
     }
 
     ret = 0;
