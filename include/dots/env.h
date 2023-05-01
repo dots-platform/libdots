@@ -13,6 +13,11 @@
 
 DOTS_EXTERNC_BEGIN
 
+typedef struct dots_env_arg {
+    unsigned char *ptr;
+    size_t length;
+} dots_env_arg_t;
+
 /**
  * \brief   Initialize DoTS environment from the program's startup environment.
  *
@@ -83,6 +88,22 @@ size_t dots_env_get_num_out_files(void);
  * \return  The name of the called function.
  */
 const char *dots_env_get_func_name(void);
+
+/**
+ * \brief       Return the arguments passed to the DoTS application.
+ *
+ * \param args  A pointer to a buffer of \c dots_env_arg_t structs which the
+ *              arguments will be written to This buffer must be of length at
+ *              least \c dots_env_get_num_args().
+ */
+void dots_env_get_args(dots_env_arg_t *args);
+
+/**
+ * \brief   Return the number of arguments.
+ *
+ * \return  The number of arguments.
+ */
+size_t dots_env_get_num_args(void);
 
 DOTS_EXTERNC_END
 
