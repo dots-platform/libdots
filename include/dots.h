@@ -3,5 +3,6 @@
 
 #include "dots/env.h"
 #include "dots/msg.h"
+#include "dots/output.h"
 
 #endif

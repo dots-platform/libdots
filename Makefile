@@ -3,6 +3,7 @@ TARGET_AR = libdots.a
 OBJS = \
 	dots/env.o \
 	dots/msg.o \
+	dots/output.o \
 	dots/internal/control_msg.o
 DEPS = $(OBJS:.o=.d)
 

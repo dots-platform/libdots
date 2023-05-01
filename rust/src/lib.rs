@@ -3,6 +3,7 @@ use std::fmt;
 
 pub mod env;
 pub mod msg;
+pub mod output;
 
 mod ffi;
 
