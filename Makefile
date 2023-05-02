@@ -4,6 +4,7 @@ OBJS = \
 	dots/env.o \
 	dots/msg.o \
 	dots/output.o \
+	dots/request.o \
 	dots/internal/control_msg.o
 DEPS = $(OBJS:.o=.d)
 

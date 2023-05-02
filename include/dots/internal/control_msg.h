@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "dots/request.h"
 #include "dots/internal/defs.h"
 
 #define CONTROL_MSG_SIZE 64
@@ -56,9 +57,9 @@ struct control_msg {
 _Static_assert(sizeof(struct control_msg) == CONTROL_MSG_SIZE,
         "Control message size is not 64 bytes!");
 
-int dots_send_control_msg(struct control_msg *msg, uint16_t type,
-        const void *payload, size_t payload_len);
-int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
-        void **payload, size_t *payload_len);
+int dots_send_control_msg(dots_request_t *req, struct control_msg *msg,
+        uint16_t type, const void *payload, size_t payload_len);
+int dots_recv_control_msg(dots_request_t *req, struct control_msg *msg,
+        uint16_t *type, void **payload, size_t *payload_len);
 
 #endif

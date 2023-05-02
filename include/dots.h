@@ -4,5 +4,6 @@
 #include "dots/env.h"
 #include "dots/msg.h"
 #include "dots/output.h"
+#include "dots/request.h"
 
 #endif
