@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include "dots/env.h"
 #include "dots/err.h"
+#include "dots/request.h"
 #include "dots/internal/env.h"
 
 static_assert(sizeof(size_t) >= sizeof(uint32_t),
@@ -55,10 +55,12 @@ exit:
 }
 
 /* Send a message to the control socket. */
-int dots_send_control_msg(struct control_msg *msg, uint16_t type,
-        const void *payload, size_t payload_len) {
+int dots_send_control_msg(dots_request_t *req, struct control_msg *msg,
+        uint16_t type, const void *payload, size_t payload_len) {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
+
+    (void) req; // TODO Use request ID.
 
     /* Set message header values. */
     msg->hdr.type = htons(type);
@@ -93,10 +95,12 @@ exit:
 }
 
 /* Receive a message from the control socket. */
-int dots_recv_control_msg(struct control_msg *msg, uint16_t *type,
-        void **payload, size_t *payload_len) {
+int dots_recv_control_msg(dots_request_t *req, struct control_msg *msg,
+        uint16_t *type, void **payload, size_t *payload_len) {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
+
+    (void) req; // TODO Use request ID.
 
     pthread_mutex_lock(&mutex);
 
