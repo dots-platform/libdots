@@ -12,4 +12,4 @@ int dots_init(void) {
     return ret;
 }
 
-void dots_finalize() {}
+void dots_finalize(void) {}
