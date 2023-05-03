@@ -21,7 +21,7 @@ struct rank_tag_socket {
     int socket;
 };
 
-int dots_msg_send(dots_request_t *req, const void *buf_, size_t len,
+int dots_msg_send(const dots_request_t *req, const void *buf_, size_t len,
         size_t recipient, int tag) {
     const unsigned char *buf = buf_;
     int ret;
@@ -53,8 +53,8 @@ exit:
     return ret;
 }
 
-int dots_msg_recv(dots_request_t *req, void *buf_, size_t len, size_t sender,
-        int tag, size_t *recv_len) {
+int dots_msg_recv(const dots_request_t *req, void *buf_, size_t len,
+        size_t sender, int tag, size_t *recv_len) {
     unsigned char *buf = buf_;
     int ret;
 

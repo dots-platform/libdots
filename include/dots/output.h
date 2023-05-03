@@ -17,7 +17,7 @@
  *
  * \return          \c 0 on success.
  */
-int dots_output(dots_request_t *req,
+int dots_output(const dots_request_t *req,
         const unsigned char *buf, size_t buf_len);
 
 /**
@@ -29,7 +29,7 @@ int dots_output(dots_request_t *req,
  *
  * \return      \c 0 on success.
  */
-int FORMAT(printf, 2, 3) dots_outputf(dots_request_t *req, const char *fmt,
-        ...);
+int FORMAT(printf, 2, 3) dots_outputf(const dots_request_t *req,
+        const char *fmt, ...);
 
 #endif

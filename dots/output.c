@@ -9,7 +9,7 @@
 
 #define INITIAL_OUTPUTF_BUF_SIZE 4096
 
-int dots_output(dots_request_t *req, const unsigned char *data,
+int dots_output(const dots_request_t *req, const unsigned char *data,
         size_t data_len) {
     int ret;
 
@@ -25,7 +25,7 @@ exit:
     return ret;
 }
 
-int dots_outputf(dots_request_t *req, const char *fmt, ...) {
+int dots_outputf(const dots_request_t *req, const char *fmt, ...) {
     int ret;
 
     va_list args;
