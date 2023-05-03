@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dots/err.h"
+#include "dots/internal/control_msg.h"
 #include "dots/internal/defs.h"
 
 struct request_input {
@@ -33,26 +34,25 @@ static_assert(sizeof(struct request_input) == 128, "Size of environment input is
 int dots_request_accept(dots_request_t *req) {
     int ret;
 
-    /* Read request length. */
-    uint32_t req_len;
-    if (fread(&req_len, 1, sizeof(req_len), stdin) != 4) {
-        ret = DOTS_ERR_INTERFACE;
-        goto exit;
-    }
-    req_len = ntohl(req_len);
-
-    /* Allocate request input buffer. */
-    struct request_input *req_input = malloc(req_len);
-    if (!req_input) {
-        ret = DOTS_ERR_LIBC;
+    /* Construct REQ_ACCEPT control message. */
+    struct control_msg msg;
+    ret =
+        dots_send_control_msg(NULL, &msg, CONTROL_MSG_TYPE_REQ_ACCEPT, NULL, 0);
+    if (ret) {
         goto exit;
     }
 
-    /* Read rest of the environment. */
-    if (fread(req_input, 1, req_len, stdin) != req_len) {
-        ret = DOTS_ERR_INTERFACE;
-        goto exit_free_req_input;
+    /* Receive a REQ_ACCEPT_RESP control message. */
+    uint16_t resp_type;
+    void *req_input_v;
+    size_t req_input_len;
+    ret =
+        dots_recv_control_msg(NULL, &msg, &resp_type, &req_input_v,
+                &req_input_len);
+    if (ret) {
+        goto exit;
     }
+    struct request_input *req_input = req_input_v;
 
     /* Set request vars. */
     req->world_rank = ntohl(req_input->world_rank);

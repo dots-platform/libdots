@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include "dots/err.h"
 #include "dots/request.h"
@@ -60,10 +61,13 @@ int dots_send_control_msg(dots_request_t *req, struct control_msg *msg,
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
 
-    (void) req; // TODO Use request ID.
-
     /* Set message header values. */
     msg->hdr.type = htons(type);
+    if (!req) {
+        memset(msg->hdr.request_id, '\0', sizeof(msg->hdr.request_id));
+    } else {
+        memcpy(msg->hdr.request_id, req->id, sizeof(msg->hdr.request_id));
+    }
 
     /* Ensure length fits within 4 bytes. */
     if (payload_len > UINT32_MAX) {
@@ -100,7 +104,7 @@ int dots_recv_control_msg(dots_request_t *req, struct control_msg *msg,
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
 
-    (void) req; // TODO Use request ID.
+    (void) req; // TODO Use request ID to disambiguate responses in multithreaded applications.
 
     pthread_mutex_lock(&mutex);
 
