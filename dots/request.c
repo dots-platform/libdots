@@ -11,6 +11,7 @@
 #include "dots/internal/defs.h"
 
 struct request_input {
+    unsigned char id[16];
     uint32_t world_rank;
     uint32_t world_size;
     uint32_t input_files_offset;
@@ -20,7 +21,7 @@ struct request_input {
     uint32_t func_name_offset;
     uint32_t args_offset;
     uint32_t args_count;
-    unsigned char unused[92];
+    unsigned char unused[76];
     unsigned char data[];
 } PACKED;
 
@@ -55,6 +56,7 @@ int dots_request_accept(dots_request_t *req) {
     struct request_input *req_input = req_input_v;
 
     /* Set request vars. */
+    memcpy(req->id, req_input->id, sizeof(req->id));
     req->world_rank = ntohl(req_input->world_rank);
     req->world_size = ntohl(req_input->world_size);
     req->in_fds =
@@ -99,7 +101,22 @@ exit:
     return ret;
 }
 
-void dots_req_finalize(dots_request_t *req) {
+int dots_request_finish(dots_request_t *req) {
+    int ret;
+
+    /* Construct and send REQ_FINISH control message. */
+    struct control_msg msg;
+    ret =
+        dots_send_control_msg(req, &msg, CONTROL_MSG_TYPE_REQ_FINISH, NULL, 0);
+    if (ret) {
+        goto exit;
+    }
+
+exit:
+    return ret;
+}
+
+void dots_request_free(dots_request_t *req) {
     free(req->input);
     free(req->args);
 }

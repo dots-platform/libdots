@@ -42,10 +42,19 @@ typedef struct dots_request {
 int dots_request_accept(dots_request_t *req);
 
 /**
- * \brief       Concludes the request and free resources allocated for the request.
+ * \brief       Concludes the request, returning any results back to the client.
  *
- * \param req   The request to finalize.
+ * \param req   The request to conclude.
+ *
+ * \return      \c 0 on success.
  */
-void dots_request_finalize(dots_request_t *req);
+int dots_request_finish(dots_request_t *req);
+
+/**
+ * \brief       Free resources allocated for the request.
+ *
+ * \param req   The request to free.
+ */
+void dots_request_free(dots_request_t *req);
 
 #endif

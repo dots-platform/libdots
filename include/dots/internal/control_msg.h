@@ -15,6 +15,7 @@
 #define CONTROL_MSG_TYPE_OUTPUT 5u
 #define CONTROL_MSG_TYPE_REQ_ACCEPT 6u
 #define CONTROL_MSG_TYPE_REQ_ACCEPT_RESP 7u
+#define CONTROL_MSG_TYPE_REQ_FINISH 8u
 
 struct control_msg_hdr {
     uint16_t type;
@@ -57,6 +58,10 @@ struct control_msg_req_accept_resp {
     unsigned char unused;
 };
 
+struct control_msg_req_finish {
+    unsigned char unused;
+};
+
 struct control_msg {
     struct control_msg_hdr hdr;
     union {
@@ -67,6 +72,7 @@ struct control_msg {
         struct control_msg_output output;
         struct control_msg_req_accept req_accept;
         struct control_msg_req_accept_resp req_accept_resp;
+        struct control_msg_req_finish req_finish;
         unsigned char bytes[32];
     } PACKED data;
     unsigned char payload[];
