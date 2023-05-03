@@ -56,7 +56,7 @@ exit:
 }
 
 /* Send a message to the control socket. */
-int dots_send_control_msg(dots_request_t *req, struct control_msg *msg,
+int dots_send_control_msg(const dots_request_t *req, struct control_msg *msg,
         uint16_t type, const void *payload, size_t payload_len) {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
@@ -99,7 +99,7 @@ exit:
 }
 
 /* Receive a message from the control socket. */
-int dots_recv_control_msg(dots_request_t *req, struct control_msg *msg,
+int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
         uint16_t *type, void **payload, size_t *payload_len) {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;

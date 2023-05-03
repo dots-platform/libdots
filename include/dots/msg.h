@@ -31,7 +31,7 @@ DOTS_EXTERNC_BEGIN
  *
  * \return          \c 0 on success.
  */
-int dots_msg_send(dots_request_t *req, const void *buf, size_t len,
+int dots_msg_send(const dots_request_t *req, const void *buf, size_t len,
         size_t recipient, int tag);
 
 /**
@@ -52,8 +52,8 @@ int dots_msg_send(dots_request_t *req, const void *buf, size_t len,
  *
  * \return          \c 0 on success.
  */
-int dots_msg_recv(dots_request_t *req, void *buf, size_t len, size_t sender,
-        int tag, size_t *recv_len);
+int dots_msg_recv(const dots_request_t *req, void *buf, size_t len,
+        size_t sender, int tag, size_t *recv_len);
 
 DOTS_EXTERNC_END
 

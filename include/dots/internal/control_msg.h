@@ -81,9 +81,9 @@ struct control_msg {
 _Static_assert(sizeof(struct control_msg) == CONTROL_MSG_SIZE,
         "Control message size is not 64 bytes!");
 
-int dots_send_control_msg(dots_request_t *req, struct control_msg *msg,
+int dots_send_control_msg(const dots_request_t *req, struct control_msg *msg,
         uint16_t type, const void *payload, size_t payload_len);
-int dots_recv_control_msg(dots_request_t *req, struct control_msg *msg,
+int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
         uint16_t *type, void **payload, size_t *payload_len);
 
 #endif
