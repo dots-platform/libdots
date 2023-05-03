@@ -93,6 +93,8 @@ int dots_request_accept(dots_request_t *req) {
         req->args[i].length = ntohl(arg_iovec[i].length);
     }
 
+    req->input = req_input;
+
     return 0;
 
 exit_free_req_input:
