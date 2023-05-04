@@ -16,6 +16,8 @@ pub struct Request {
     pub func_name: String,
     pub args: Vec<Vec<u8>>,
     pub ffi: ffi::dots_request_t,
+
+    is_finished: bool,
 }
 
 pub fn accept() -> DotsResult<Request> {
@@ -54,14 +56,31 @@ pub fn accept() -> DotsResult<Request> {
         func_name,
         args,
         ffi: request_ffi,
+
+        is_finished: false,
     };
     Ok(request)
 }
 
 impl Drop for Request {
     fn drop(&mut self) {
+        if !self.is_finished {
+            self.finish()
+                .expect("Failed to implicitly finish dropped request");
+        }
         unsafe {
             ffi::dots_request_free(&mut self.ffi);
         }
+    }
+}
+
+impl Request {
+    pub fn finish(&mut self) -> DotsResult<()> {
+        let ret = unsafe { ffi::dots_request_finish(&mut self.ffi) };
+        if ret != 0 {
+            return Err(DotsError::from_ret(ret));
+        }
+        self.is_finished = true;
+        Ok(())
     }
 }
