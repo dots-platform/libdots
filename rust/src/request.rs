@@ -61,3 +61,11 @@ pub fn accept() -> DotsResult<Request> {
     };
     Ok(request)
 }
+
+impl Drop for Request {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::dots_request_free(&mut self.ffi);
+        }
+    }
+}
