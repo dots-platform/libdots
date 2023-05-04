@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "dots/env.h"
 #include "dots/err.h"
 #include "dots/request.h"
 #include "dots/internal/control_msg.h"
@@ -26,7 +27,7 @@ int dots_msg_send(const dots_request_t *req, const void *buf_, size_t len,
     const unsigned char *buf = buf_;
     int ret;
 
-    if (recipient >= req->world_size || recipient == req->world_rank) {
+    if (recipient >= dots_world_size || recipient == dots_world_rank) {
         ret = DOTS_ERR_INVALID;
         goto exit;
     }
@@ -58,7 +59,7 @@ int dots_msg_recv(const dots_request_t *req, void *buf_, size_t len,
     unsigned char *buf = buf_;
     int ret;
 
-    if (sender >= req->world_size || sender == req->world_rank) {
+    if (sender >= dots_world_size || sender == dots_world_rank) {
         ret = DOTS_ERR_INVALID;
         goto exit;
     }

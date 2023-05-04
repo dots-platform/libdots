@@ -8,6 +8,9 @@
 static int handle_request(void) {
     int ret;
 
+    size_t world_size = dots_get_world_size();
+    size_t world_rank = dots_get_world_rank();
+
     dots_request_t req;
     if (dots_request_accept(&req)) {
         fprintf(stderr, "Failed to accept request\n");
@@ -17,13 +20,13 @@ static int handle_request(void) {
 
     /* Send bytes between sockets for a while for testing. */
     uint32_t bytes;
-    for (size_t sender = 0; sender < req.world_size; sender++) {
-        if (req.world_rank == sender) {
+    for (size_t sender = 0; sender < world_size; sender++) {
+        if (world_rank == sender) {
             for (int tag = 0; tag < 10; tag++) {
                 bytes = htonl(sender * 10 + tag);
-                for (size_t recipient = 0; recipient < req.world_size;
+                for (size_t recipient = 0; recipient < world_size;
                         recipient++) {
-                    if (recipient == req.world_rank) {
+                    if (recipient == world_rank) {
                         continue;
                     }
 
