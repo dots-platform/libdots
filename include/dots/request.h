@@ -18,8 +18,6 @@ typedef struct dots_request_arg {
 
 typedef struct dots_request {
     unsigned char id[16];
-    size_t world_rank;
-    size_t world_size;
     int32_t *in_fds;
     size_t in_fds_len;
     int32_t *out_fds;

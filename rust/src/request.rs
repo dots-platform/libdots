@@ -11,8 +11,6 @@ use crate::ffi;
 
 pub struct Request {
     pub id: Uuid,
-    pub world_rank: usize,
-    pub world_size: usize,
     pub in_files: Vec<File>,
     pub out_files: Vec<File>,
     pub func_name: String,
@@ -51,8 +49,6 @@ pub fn accept() -> DotsResult<Request> {
 
     let request = Request {
         id: Uuid::from_bytes(request_ffi.id),
-        world_rank: request_ffi.world_rank,
-        world_size: request_ffi.world_size,
         in_files,
         out_files,
         func_name,

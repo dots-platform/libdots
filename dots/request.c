@@ -12,8 +12,6 @@
 
 struct request_input {
     unsigned char id[16];
-    uint32_t world_rank;
-    uint32_t world_size;
     uint32_t input_files_offset;
     uint32_t input_files_count;
     uint32_t output_files_offset;
@@ -21,7 +19,7 @@ struct request_input {
     uint32_t func_name_offset;
     uint32_t args_offset;
     uint32_t args_count;
-    unsigned char unused[76];
+    unsigned char unused[84];
     unsigned char data[];
 } PACKED;
 
@@ -30,7 +28,8 @@ struct request_input_iovec {
     uint32_t length;
 } PACKED;
 
-static_assert(sizeof(struct request_input) == 128, "Size of environment input is not 128 bytes!");
+static_assert(sizeof(struct request_input) == 128,
+        "Size of request input is not 128 bytes!");
 
 int dots_request_accept(dots_request_t *req) {
     int ret;
@@ -57,8 +56,6 @@ int dots_request_accept(dots_request_t *req) {
 
     /* Set request vars. */
     memcpy(req->id, req_input->id, sizeof(req->id));
-    req->world_rank = ntohl(req_input->world_rank);
-    req->world_size = ntohl(req_input->world_size);
     req->in_fds =
         (int32_t *) ((unsigned char *) req_input
                 + ntohl(req_input->input_files_offset));
