@@ -1,17 +1,21 @@
 use crate::*;
 use crate::ffi;
 
-pub fn init() -> DotsResult<()> {
+pub struct EnvContext {}
+
+pub fn init() -> DotsResult<EnvContext> {
     let ret = unsafe { ffi::dots_init() };
     if ret != 0 {
         return Err(DotsError::from_ret(ret));
     }
 
-    Ok(())
+    Ok(EnvContext {})
 }
 
-pub fn finalize() {
-    unsafe {
-        ffi::dots_finalize();
+impl Drop for EnvContext {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::dots_finalize();
+        }
     }
 }
