@@ -29,7 +29,7 @@ pub fn recv(buf: &mut [u8], recipient: usize, tag: i32) -> DotsResult<usize> {
 }
 
 impl Request {
-    pub fn send(&self, buf: &[u8], recipient: usize, tag: i32) -> DotsResult<()> {
+    pub fn msg_send(&self, buf: &[u8], recipient: usize, tag: i32) -> DotsResult<()> {
         let ret = unsafe { ffi::dots_msg_send(&self.ffi, buf.as_ptr() as *const c_void, buf.len(), recipient, tag) };
         if ret != 0 {
             return Err(DotsError::from_ret(ret));
@@ -38,7 +38,7 @@ impl Request {
         Ok(())
     }
 
-    pub fn recv(&self, buf: &mut [u8], recipient: usize, tag: i32) -> DotsResult<usize> {
+    pub fn msg_recv(&self, buf: &mut [u8], recipient: usize, tag: i32) -> DotsResult<usize> {
         let bytes_received = unsafe {
             let mut bytes_received = MaybeUninit::<usize>::uninit();
             let ret = ffi::dots_msg_recv(&self.ffi, buf.as_ptr() as *mut c_void, buf.len(), recipient, tag, mem::transmute(&mut bytes_received));
