@@ -20,6 +20,9 @@ pub struct Request {
     is_finished: bool,
 }
 
+unsafe impl Sync for Request {}
+unsafe impl Send for Request {}
+
 pub fn accept() -> DotsResult<Request> {
     let request_ffi = {
         let mut request = MaybeUninit::<ffi::dots_request_t>::uninit();
