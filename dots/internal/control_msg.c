@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -98,13 +99,32 @@ exit:
     return ret;
 }
 
+static bool message_matches_request(const dots_request_t *req, uint16_t type,
+        struct control_msg *msg, uint16_t msg_type) {
+    if (req) {
+        if (memcmp(msg->hdr.request_id, req->id, sizeof(req->id)) != 0) {
+            return false;
+        }
+    } else {
+        for (size_t i = 0; i < sizeof(req->id); i++) {
+            if (msg->hdr.request_id[i] != 0) {
+                return false;
+            }
+        }
+    }
+
+    if (msg_type != type) {
+        return false;
+    }
+
+    return true;
+}
+
 /* Receive a message from the control socket. */
 int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
-        uint16_t *type, void **payload, size_t *payload_len) {
+        uint16_t type, void **payload, size_t *payload_len) {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     int ret;
-
-    (void) req; // TODO Use request ID to disambiguate responses in multithreaded applications.
 
     pthread_mutex_lock(&mutex);
 
@@ -115,7 +135,7 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
     }
 
     /* Parse header values. */
-    *type = ntohs(msg->hdr.type);
+    uint16_t recv_type = ntohs(msg->hdr.type);
     *payload_len = ntohl(msg->hdr.payload_len);
 
     /* Allocate space for payload. */
@@ -130,6 +150,11 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
     if (ret) {
         goto exit_free_payload;
     }
+
+    /* Assert this was for the request ID and type we requested. */
+    // TODO Use request ID to disambiguate responses in multithreaded
+    // applications rather than simply asserting.
+    assert(message_matches_request(req, type, msg, recv_type));
 
     ret = 0;
 
