@@ -3,6 +3,9 @@ use crate::ffi;
 
 pub struct Env {}
 
+unsafe impl Sync for Env {}
+unsafe impl Send for Env {}
+
 pub fn init() -> DotsResult<Env> {
     let ret = unsafe { ffi::dots_init() };
     if ret != 0 {
