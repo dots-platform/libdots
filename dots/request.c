@@ -43,12 +43,11 @@ int dots_request_accept(dots_request_t *req) {
     }
 
     /* Receive a REQ_ACCEPT_RESP control message. */
-    uint16_t resp_type;
     void *req_input_v;
     size_t req_input_len;
     ret =
-        dots_recv_control_msg(NULL, &msg, &resp_type, &req_input_v,
-                &req_input_len);
+        dots_recv_control_msg(NULL, &msg, CONTROL_MSG_TYPE_REQ_ACCEPT_RESP,
+                &req_input_v, &req_input_len);
     if (ret) {
         goto exit;
     }

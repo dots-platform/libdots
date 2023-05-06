@@ -84,6 +84,6 @@ _Static_assert(sizeof(struct control_msg) == CONTROL_MSG_SIZE,
 int dots_send_control_msg(const dots_request_t *req, struct control_msg *msg,
         uint16_t type, const void *payload, size_t payload_len);
 int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
-        uint16_t *type, void **payload, size_t *payload_len);
+        uint16_t type, void **payload, size_t *payload_len);
 
 #endif

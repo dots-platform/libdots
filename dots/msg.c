@@ -1,6 +1,5 @@
 #include "dots/msg.h"
 #include <arpa/inet.h>
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -86,14 +85,13 @@ int dots_msg_recv(const dots_request_t *req, void *buf_, size_t len,
     }
 
     /* Receive data. */
-    uint16_t msg_type;
     void *recv_data;
-    ret = dots_recv_control_msg(req, &msg, &msg_type, &recv_data, recv_len);
+    ret =
+        dots_recv_control_msg(req, &msg, CONTROL_MSG_TYPE_MSG_RECV, &recv_data,
+                recv_len);
     if (ret) {
         goto exit;
     }
-
-    assert(msg_type == CONTROL_MSG_TYPE_MSG_RECV_RESP);
 
     /* If the buffer is too small, return an error. */
     if (len < *recv_len) {
