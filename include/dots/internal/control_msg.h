@@ -75,7 +75,6 @@ struct control_msg {
         struct control_msg_req_finish req_finish;
         unsigned char bytes[32];
     } PACKED data;
-    unsigned char payload[];
 } PACKED;
 
 _Static_assert(sizeof(struct control_msg) == CONTROL_MSG_SIZE,
