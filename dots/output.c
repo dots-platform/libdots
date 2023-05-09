@@ -4,15 +4,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dots/err.h"
+#include "dots/request.h"
 #include "dots/internal/control_msg.h"
 
 #define INITIAL_OUTPUTF_BUF_SIZE 4096
 
-int dots_output(const unsigned char *data, size_t data_len) {
+int dots_output(const dots_request_t *req, const unsigned char *data,
+        size_t data_len) {
     int ret;
 
     struct control_msg msg;
-    ret = dots_send_control_msg(&msg, CONTROL_MSG_TYPE_OUTPUT, data, data_len);
+    ret =
+        dots_send_control_msg(req, &msg, CONTROL_MSG_TYPE_OUTPUT, data,
+                data_len);
     if (ret) {
         goto exit;
     }
@@ -21,7 +25,7 @@ exit:
     return ret;
 }
 
-int dots_outputf(const char *fmt, ...) {
+int dots_outputf(const dots_request_t *req, const char *fmt, ...) {
     int ret;
 
     va_list args;
@@ -50,7 +54,7 @@ int dots_outputf(const char *fmt, ...) {
         size_t data_len = ret;
 
         /* Write output and break. */
-        ret = dots_output((unsigned char *) buf, data_len);
+        ret = dots_output(req, (unsigned char *) buf, data_len);
         if (ret) {
             goto exit_free_buf;
         }

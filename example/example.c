@@ -1,51 +1,58 @@
-#include "dots.h"
 #include <arpa/inet.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <dots.h>
 
-int main(void) {
-    if (dots_env_init()) {
-        fprintf(stderr, "Failed environment initialization\n");
-        abort();
+static int handle_request(void) {
+    int ret;
+
+    size_t world_size = dots_get_world_size();
+    size_t world_rank = dots_get_world_rank();
+
+    dots_request_t req;
+    if (dots_request_accept(&req)) {
+        fprintf(stderr, "Failed to accept request\n");
+        ret = -1;
+        goto exit;
     }
-
-    size_t dots_world_rank = dots_env_get_world_rank();
-    size_t dots_world_size = dots_env_get_world_size();
 
     /* Send bytes between sockets for a while for testing. */
     uint32_t bytes;
-    for (size_t sender = 0; sender < dots_world_size; sender++) {
-        if (dots_world_rank == sender) {
+    for (size_t sender = 0; sender < world_size; sender++) {
+        if (world_rank == sender) {
             for (int tag = 0; tag < 10; tag++) {
                 bytes = htonl(sender * 10 + tag);
-                for (size_t recipient = 0; recipient < dots_world_size;
+                for (size_t recipient = 0; recipient < world_size;
                         recipient++) {
-                    if (recipient == dots_world_rank) {
+                    if (recipient == world_rank) {
                         continue;
                     }
 
-                    if (dots_msg_send(&bytes, sizeof(bytes), recipient, tag)) {
+                    if (dots_msg_send(&req, &bytes, sizeof(bytes), recipient, tag)) {
                         fprintf(stderr, "Failed sending to %zu on tag %d\n",
                                 recipient, tag);
-                        abort();
+                        ret = -1;
+                        goto exit_free_request;
                     }
                     printf("Sent %zu to %zu\n", sender, recipient);
                 }
             }
         } else {
             for (int tag = 9; tag >= 0; tag--) {
-                if (dots_msg_recv(&bytes, sizeof(bytes), sender, tag, NULL)) {
+                if (dots_msg_recv(&req, &bytes, sizeof(bytes), sender, tag, NULL)) {
                     fprintf(stderr, "Failed receiving from %zu on tag %d\n",
                             sender, tag);
-                    abort();
+                    ret = -1;
+                    goto exit_free_request;
                 }
                 if (ntohl(bytes) != sender * 10 + tag) {
                     fprintf(stderr,
                             "Received %" PRIu32 " instead of %zu from %zu on tag %d\n",
                             ntohl(bytes), sender * 10 + tag, sender, tag);
-                    abort();
+                    ret = -1;
+                    goto exit_free_request;
                 }
                 printf("Received %" PRIu32 " from %zu on tag %d\n",
                         ntohl(bytes), sender, tag);
@@ -54,36 +61,56 @@ int main(void) {
     }
 
     /* Read arguments and dump them out. */
-    size_t num_args = dots_env_get_num_args();
-    dots_env_arg_t *args = malloc(num_args * sizeof(*args));
-    if (!args) {
-        perror("malloc args");
-        abort();
-    }
-    dots_env_get_args(args);
-    for (size_t i = 0; i < num_args; i++) {
-        printf("arg[%zu] as string: %s\n", i, (char *) args[i].ptr);
+    for (size_t i = 0; i < req.args_len; i++) {
+        printf("arg[%zu] as string: %s\n", i, (char *) req.args[i].ptr);
         printf("arg[%zu] as bytes: ", i);
-        for (size_t j = 0; j < args[i].length; j++) {
-            printf("%02x", args[i].ptr[j]);
+        for (size_t j = 0; j < req.args[i].length; j++) {
+            printf("%02x", req.args[i].ptr[j]);
         }
         printf("\n");
     }
 
     /* Test some output. */
-    if (dots_outputf("Hello world!\n")) {
+    if (dots_outputf(&req, "Hello world!\n")) {
         fprintf(stderr, "Failed to outputf static string\n");
-        abort();
+        ret = -1;
+        goto exit_free_request;
     }
-    if (dots_outputf("%s %d %d %d\n", "foobar", 1, 2, 3)) {
+    if (dots_outputf(&req, "%s %d %d %d\n", "foobar", 1, 2, 3)) {
         fprintf(stderr, "Failed to outputf formatted string\n");
-        abort();
+        ret = -1;
+        goto exit_free_request;
     }
     unsigned char buf[] = { 1, 2, 3, 4, 5 };
-    if (dots_output(buf, sizeof(buf))) {
+    if (dots_output(&req, buf, sizeof(buf))) {
         fprintf(stderr, "Failed to output raw buffer\n");
+        ret = -1;
+        goto exit_free_request;
+    }
+
+    if (dots_request_finish(&req)) {
+        fprintf(stderr, "Failed to finish request\n");
+        ret = -1;
+        goto exit_free_request;
+    }
+
+    ret = 0;
+
+exit_free_request:
+    dots_request_free(&req);
+exit:
+    return ret;
+}
+
+int main(void) {
+    if (dots_init()) {
+        fprintf(stderr, "Failed runtime initialization\n");
         abort();
     }
 
-    dots_env_finalize();
+    while (1) {
+        if (handle_request()) {
+            abort();
+        }
+    }
 }
