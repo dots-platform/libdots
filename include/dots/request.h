@@ -10,6 +10,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "dots/defs.h"
+
+DOTS_EXTERNC_BEGIN
 
 typedef struct dots_request_arg {
     unsigned char *ptr;
@@ -54,5 +57,7 @@ int dots_request_finish(dots_request_t *req);
  * \param req   The request to free.
  */
 void dots_request_free(dots_request_t *req);
+
+DOTS_EXTERNC_END
 
 #endif
