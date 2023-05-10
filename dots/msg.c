@@ -12,6 +12,7 @@
 #include "dots/request.h"
 #include "dots/internal/control_msg.h"
 #include "dots/internal/env.h"
+#include "dots/internal/util.h"
 
 #define INITIAL_RANK_TAG_SOCKETS_CAP 8
 
@@ -83,12 +84,11 @@ int dots_msg_recv(const dots_request_t *req, void *buf_, size_t len,
     if (ret) {
         goto exit;
     }
+    uint64_t send_msg_id = dots_ntohll(msg.hdr.msg_id);
 
     /* Receive data. */
     void *recv_data;
-    ret =
-        dots_recv_control_msg(req, &msg, CONTROL_MSG_TYPE_MSG_RECV_RESP,
-                &recv_data, recv_len);
+    ret = dots_recv_control_msg(send_msg_id, &msg, &recv_data, recv_len);
     if (ret) {
         goto exit;
     }

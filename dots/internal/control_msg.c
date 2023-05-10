@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -12,9 +13,12 @@
 #include "dots/err.h"
 #include "dots/request.h"
 #include "dots/internal/env.h"
+#include "dots/internal/util.h"
 
 static_assert(sizeof(size_t) >= sizeof(uint32_t),
         "size_t must be able to hold at least a uint32_t");
+
+static atomic_uint_fast64_t msg_counter;
 
 static int sendall(int fd, const void *buf_, size_t len) {
     const unsigned char *buf = buf_;
@@ -63,6 +67,9 @@ int dots_send_control_msg(const dots_request_t *req, struct control_msg *msg,
     int ret;
 
     /* Set message header values. */
+    msg->hdr.msg_id =
+        atomic_fetch_add_explicit(&msg_counter, 1, memory_order_relaxed);
+    msg->hdr.msg_id = dots_htonll(msg->hdr.msg_id);
     msg->hdr.type = htons(type);
     if (!req) {
         memset(msg->hdr.request_id, '\0', sizeof(msg->hdr.request_id));
@@ -99,31 +106,8 @@ exit:
     return ret;
 }
 
-static bool message_matches_request(const dots_request_t *req, uint16_t type,
-        struct control_msg *msg, uint16_t msg_type) {
-    if (req) {
-        if (memcmp(msg->hdr.request_id, req->id, sizeof(req->id)) != 0) {
-            return false;
-        }
-    } else {
-        for (size_t i = 0; i < sizeof(req->id); i++) {
-            if (msg->hdr.request_id[i] != 0) {
-                return false;
-            }
-        }
-    }
-
-    if (msg_type != type) {
-        return false;
-    }
-
-    return true;
-}
-
 struct recv_wait_list {
-    const dots_request_t *req;
-    uint16_t type;
-
+    uint64_t resp_msg_id;
     struct control_msg *msg;
     void **payload;
     size_t *payload_len;
@@ -135,7 +119,7 @@ struct recv_wait_list {
 };
 
 struct recv_msg_list {
-    uint16_t type;
+    uint64_t resp_msg_id;
     struct control_msg msg;
     void *payload;
     size_t payload_len;
@@ -144,8 +128,8 @@ struct recv_msg_list {
 };
 
 /* Receive a message from the control socket. */
-int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
-        uint16_t type, void **payload, size_t *payload_len) {
+int dots_recv_control_msg(uint64_t resp_msg_id, struct control_msg *msg,
+        void **payload, size_t *payload_len) {
     static struct recv_wait_list *wait_list;
     static struct recv_msg_list *msg_list;
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -158,8 +142,8 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
     struct recv_msg_list **prev_next = &msg_list;
     for (struct recv_msg_list *cur = msg_list; cur != NULL;
             prev_next = &cur->next, cur = cur->next) {
-        if (message_matches_request(req, type, &cur->msg, cur->type)) {
-            memcpy(msg, &cur->msg, sizeof(*msg));
+        if (cur->resp_msg_id == resp_msg_id) {
+            *msg = cur->msg;
             *payload = cur->payload;
             *payload_len = cur->payload_len;
             *prev_next = cur->next;
@@ -174,8 +158,7 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
         /* There is another reciever. Put ourselves on the wait list and wait
          * for someone to signal us. */
         struct recv_wait_list waiter = {
-            .req = req,
-            .type = type,
+            .resp_msg_id = resp_msg_id,
             .msg = msg,
             .payload = payload,
             .payload_len = payload_len,
@@ -215,7 +198,7 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
         }
 
         /* Parse header values. */
-        uint16_t recv_type = ntohs(msg->hdr.type);
+        uint64_t resp_resp_msg_id = dots_ntohll(msg->hdr.resp_msg_id);
         *payload_len = ntohl(msg->hdr.payload_len);
 
         /* Allocate space for payload. */
@@ -232,7 +215,7 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
             goto exit;
         }
 
-        if (message_matches_request(req, type, msg, recv_type)) {
+        if (resp_resp_msg_id == resp_msg_id) {
             /* If we found our message, break out of the loop. */
             found_our_message = true;
         } else {
@@ -245,9 +228,8 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
             bool found_other_waiter = false;
             for (struct recv_wait_list *cur = wait_list; cur != NULL;
                     prev_next = &cur->next, cur = cur->next) {
-                if (message_matches_request(cur->req, cur->type, msg,
-                            recv_type)) {
-                    memcpy(cur->msg, msg, sizeof(*cur->msg));
+                if (cur->resp_msg_id == resp_resp_msg_id) {
+                    *cur->msg = *msg;
                     *cur->payload = *payload;
                     *cur->payload_len = *payload_len;
                     cur->is_fulfilled = true;
@@ -269,11 +251,13 @@ int dots_recv_control_msg(const dots_request_t *req, struct control_msg *msg,
                     ret = DOTS_ERR_LIBC;
                     goto exit;
                 }
-                memcpy(&stored_msg->msg, msg, sizeof(stored_msg->msg));
-                stored_msg->type = recv_type;
-                stored_msg->payload = *payload;
-                stored_msg->payload_len = *payload_len;
-                stored_msg->next = msg_list;
+                *stored_msg = (struct recv_msg_list) {
+                    .resp_msg_id = resp_resp_msg_id,
+                    .msg = *msg,
+                    .payload = *payload,
+                    .payload_len = *payload_len,
+                    .next = msg_list,
+                };
                 msg_list = stored_msg;
             }
 

@@ -9,6 +9,7 @@
 #include "dots/err.h"
 #include "dots/internal/control_msg.h"
 #include "dots/internal/defs.h"
+#include "dots/internal/util.h"
 
 struct request_input {
     unsigned char id[16];
@@ -41,13 +42,14 @@ int dots_request_accept(dots_request_t *req) {
     if (ret) {
         goto exit;
     }
+    uint64_t accept_msg_id = dots_ntohll(msg.hdr.msg_id);
 
     /* Receive a REQ_ACCEPT_RESP control message. */
     void *req_input_v;
     size_t req_input_len;
     ret =
-        dots_recv_control_msg(NULL, &msg, CONTROL_MSG_TYPE_REQ_ACCEPT_RESP,
-                &req_input_v, &req_input_len);
+        dots_recv_control_msg(accept_msg_id, &msg, &req_input_v,
+                &req_input_len);
     if (ret) {
         goto exit;
     }
