@@ -32,7 +32,7 @@ int dots_msg_send(const dots_request_t *req, const void *buf_, size_t len,
         goto exit;
     }
 
-    /* Construct a MSG_SEND control message. */
+    /* Send a MSG_SEND control message. */
     struct control_msg msg = {
         .data = {
             .msg_send = {
@@ -41,8 +41,6 @@ int dots_msg_send(const dots_request_t *req, const void *buf_, size_t len,
             },
         },
     };
-
-    /* Send control message. */
     ret = dots_send_control_msg(req, &msg, CONTROL_MSG_TYPE_MSG_SEND, buf, len);
     if (ret) {
         goto exit;

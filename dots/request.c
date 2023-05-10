@@ -35,8 +35,8 @@ static_assert(sizeof(struct request_input) == 128,
 int dots_request_accept(dots_request_t *req) {
     int ret;
 
-    /* Construct REQ_ACCEPT control message. */
-    struct control_msg msg;
+    /* Send a REQ_ACCEPT control message. */
+    struct control_msg msg = { 0 };
     ret =
         dots_send_control_msg(NULL, &msg, CONTROL_MSG_TYPE_REQ_ACCEPT, NULL, 0);
     if (ret) {
@@ -104,8 +104,8 @@ exit:
 int dots_request_finish(dots_request_t *req) {
     int ret;
 
-    /* Construct and send REQ_FINISH control message. */
-    struct control_msg msg;
+    /* Send a REQ_FINISH control message. */
+    struct control_msg msg = { 0 };
     ret =
         dots_send_control_msg(req, &msg, CONTROL_MSG_TYPE_REQ_FINISH, NULL, 0);
     if (ret) {

@@ -13,7 +13,8 @@ int dots_output(const dots_request_t *req, const unsigned char *data,
         size_t data_len) {
     int ret;
 
-    struct control_msg msg;
+    /* Send a OUTPUT control message. */
+    struct control_msg msg = { 0 };
     ret =
         dots_send_control_msg(req, &msg, CONTROL_MSG_TYPE_OUTPUT, data,
                 data_len);
