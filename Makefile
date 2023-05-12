@@ -6,6 +6,7 @@ OBJS = \
 	dots/output.o \
 	dots/request.o \
 	dots/internal/control_msg.o
+SRCS = $(OBJS:.o=.c)
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude
@@ -33,27 +34,19 @@ FORCE:
 example: $(TARGET_SO) FORCE
 	$(MAKE) -C example
 
-.PHONY: rust
-rust: FORCE
-	rm -rf $(RUST_DIR)/libdots
-	mkdir $(RUST_DIR)/libdots
-	set -x \
-		&& origpwd=$$PWD \
-		&& tmpdir=$$(mktemp -d) \
-		&& trap 'rm -rf "$$tmpdir"' EXIT \
-		&& cp -R .git .gitignore Makefile dots include "$$tmpdir" \
-		&& cd "$$tmpdir" \
-		&& git clean -dfx \
-		&& cp -R .gitignore Makefile dots include "$$origpwd/$(RUST_DIR)/libdots"
-	cd $(RUST_DIR) && cargo build
-
-rust-publish: rust FORCE
-	set -x \
+rust-publish: FORCE
+	set -eux \
 		&& tmpdir=$$(mktemp -d) \
 		&& trap 'rm -rf "$$tmpdir"' EXIT \
 		&& cp -R $(RUST_DIR)/. "$$tmpdir" \
 		&& rm -rf "$$tmpdir/target" \
 		&& ln -s "$$PWD/$(RUST_DIR)/target" "$$tmpdir/target" \
+		&& mkdir -p $(RUST_DIR)/target \
+		&& rm -rf "$$tmpdir/libdots" \
+		&& mkdir "$$tmpdir/libdots" \
+		&& cp -R .gitignore Makefile include "$$tmpdir/libdots" \
+		&& ( cd "$$tmpdir/libdots" && mkdir -p $(shell dirname $(SRCS)) ) \
+		&& for src in $(SRCS); do cp $$src "$$tmpdir/libdots/$$src"; done \
 		&& cd "$$tmpdir" \
 		&& cargo publish
 
