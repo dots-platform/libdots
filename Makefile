@@ -33,10 +33,29 @@ FORCE:
 example: $(TARGET_SO) FORCE
 	$(MAKE) -C example
 
-$(RUST_DIR): FORCE
+.PHONY: rust
+rust: FORCE
 	rm -rf $(RUST_DIR)/libdots
 	mkdir $(RUST_DIR)/libdots
-	cp -R Makefile dots include $(RUST_DIR)/libdots
+	set -x \
+		&& origpwd=$$PWD \
+		&& tmpdir=$$(mktemp -d) \
+		&& trap 'rm -rf "$$tmpdir"' EXIT \
+		&& cp -R .git .gitignore Makefile dots include "$$tmpdir" \
+		&& cd "$$tmpdir" \
+		&& git clean -dfx \
+		&& cp -R .gitignore Makefile dots include "$$origpwd/$(RUST_DIR)/libdots"
 	cd $(RUST_DIR) && cargo build
+
+rust-publish: rust FORCE
+	set -x \
+		&& tmpdir=$$(mktemp -d) \
+		&& trap 'rm -rf "$$tmpdir"' EXIT \
+		&& cp -R $(RUST_DIR)/. "$$tmpdir" \
+		&& rm -rf "$$tmpdir/target" \
+		&& ln -s "$$PWD/$(RUST_DIR)/target" "$$tmpdir/target" \
+		&& cd "$$tmpdir" \
+		&& cargo publish
+
 
 -include $(DEPS)
