@@ -2,7 +2,7 @@ extern crate bindgen;
 
 use std::env;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use bindgen::CargoCallbacks;
 
@@ -17,6 +17,7 @@ fn main() {
         .arg("-C")
         .arg(lib_path.to_str().unwrap())
         .arg("libdots.a")
+        .stderr(Stdio::inherit())
         .output()
         .unwrap()
         .status
